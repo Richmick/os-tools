@@ -1,0 +1,18 @@
+@PACKAGE_INIT@
+
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR})
+
+get_filename_component(INSTALL_OS_TOOLS_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+if (NOT TARGET os-tools::os-tools)
+	if(NOT EXISTS "${INSTALL_OS_TOOLS_CMAKE_DIR}/os-tools-targets.cmake")
+		set(${CMAKE_FIND_PACKAGE_NAME}_NOT_FOUND_MESSAGE "os-tools targets not found")
+		set(${CMAKE_FIND_PACKAGE_NAME}_FOUND OFF)
+		return()
+	endif()
+
+	include("${INSTALL_OS_TOOLS_CMAKE_DIR}/enable_import_std.cmake")
+	include("${INSTALL_OS_TOOLS_CMAKE_DIR}/import-std.cmake")
+	enable_experimental_std()
+	include("${INSTALL_OS_TOOLS_CMAKE_DIR}/os-tools-targets.cmake")
+	enable_cxx_modules(os-tools::os-tools STANDARD 23 STD_MODULE ON)
+endif()

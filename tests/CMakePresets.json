@@ -1,0 +1,109 @@
+﻿{
+	"version": 3,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 30
+	},
+	"configurePresets": [
+		{
+			"name": "dev-base",
+			"hidden": true,
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/out/build/${presetName}",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"CMAKE_PREFIX_PATH": "../out/install/${presetName}/lib/cmake/os-tools"
+			}
+		},
+		{
+			"name": "dev-win-base",
+			"hidden": true,
+			"inherits": "dev-base",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Windows"
+			}
+		},
+		{
+			"name": "dev-win64",
+			"hidden": false,
+			"displayName": "Win64 Debug",
+			"inherits": "dev-win-base",
+			"architecture": {
+				"value": "x64",
+				"strategy": "external"
+			}
+		},
+		{
+			"name": "dev-win32",
+			"hidden": false,
+			"displayName": "Win32 Debug",
+			"inherits": "dev-win-base",
+			"architecture": {
+				"value": "x86",
+				"strategy": "external"
+			}
+		},
+		{
+			"name": "dev-linux",
+			"displayName": "Linux Debug",
+			"inherits": "dev-base",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "../cmake/clang-toolchain.cmake"
+			},
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Linux"
+			},
+			"vendor": {
+				"microsoft.com/VisualStudioRemoteSettings/CMake/1.0": {
+					"sourceDir": "$env{HOME}/.vs/$ms{projectDirName}"
+				}
+			}
+		},
+		{
+			"name": "dev-android",
+			"displayName": "Android Debug",
+			"inherits": "dev-base",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Android"
+			}
+		},
+		{
+			"name": "release-win32",
+			"displayName": "Win32 Release",
+			"inherits": "dev-win32",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "release-win64",
+			"displayName": "Win64 Release",
+			"inherits": "dev-win64",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "release-linux",
+			"displayName": "Linux Release",
+			"inherits": "dev-linux",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "release-android",
+			"displayName": "Android Release",
+			"inherits": "dev-android",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		}
+	]
+}
