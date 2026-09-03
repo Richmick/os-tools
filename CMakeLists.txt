@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.0
+		VERSION 0.0.1
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )
@@ -34,9 +34,17 @@ add_library(${PROJECT_NAME})
 add_library(os-tools::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 set(cxx_sources
+	"os-tools/winapi/handle.cpp"
+	"os-tools/linapi/handle.cpp"
 )
 set(cxx_modules
 	"os-tools/os.ixx"
+	"os-tools/winapi.ixx"
+	"os-tools/winapi/aliases.ixx"
+	"os-tools/winapi/handle.ixx"
+	"os-tools/linapi.ixx"
+	"os-tools/linapi/aliases.ixx"
+	"os-tools/linapi/handle.ixx"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})
