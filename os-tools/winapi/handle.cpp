@@ -9,7 +9,7 @@ module os.winapi;
 
 bool winapi::is_blank(handle_t h) noexcept
 {
-	return (h != nullptr) && (h != INVALID_HANDLE_VALUE);
+	return (h == nullptr) || (h == INVALID_HANDLE_VALUE);
 }
 
 winapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:
@@ -63,17 +63,25 @@ winapi::handle_t* winapi::unique_handle::operator&() noexcept
 }
 winapi::unique_handle::operator bool() const noexcept
 {
-	return is_blank(native_);
+	return !is_blank(native_);
 }
-std::strong_ordering winapi::unique_handle::operator<=>(const unique_handle& rhs) noexcept
+std::strong_ordering winapi::unique_handle::operator<=>(const unique_handle& rhs) const noexcept
 {
 	return native_ <=> rhs.native_;
 }
-std::strong_ordering winapi::unique_handle::operator<=>(handle_t rhs) noexcept
+std::strong_ordering winapi::unique_handle::operator<=>(handle_t rhs) const noexcept
 {
 	return native_ <=> rhs;
 }
-bool winapi::unique_handle::operator==(std::nullptr_t) noexcept
+bool winapi::unique_handle::operator==(const unique_handle& rhs) const noexcept
+{
+	return native_ == rhs.native_;
+}
+bool winapi::unique_handle::operator==(handle_t rhs) const noexcept
+{
+	return native_ == rhs;
+}
+bool winapi::unique_handle::operator==(std::nullptr_t) const noexcept
 {
 	return !operator bool();
 }

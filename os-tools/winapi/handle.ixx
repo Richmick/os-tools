@@ -47,9 +47,11 @@ public:
 	handle_t* operator&() noexcept;
 	operator bool() const noexcept;
 
-	std::strong_ordering operator<=>(const unique_handle& rhs) noexcept;
-	std::strong_ordering operator<=>(handle_t h) noexcept;
-	bool operator==(std::nullptr_t) noexcept;
+	std::strong_ordering operator<=>(const unique_handle& rhs) const noexcept;
+	std::strong_ordering operator<=>(handle_t h) const noexcept;
+	bool operator==(const unique_handle& rhs) const noexcept;
+	bool operator==(handle_t rhs) const noexcept;
+	bool operator==(std::nullptr_t) const noexcept;
 
 private:
 	handle_t native_ = nullptr;
