@@ -4,17 +4,14 @@ import std;
 
 #ifdef __linux__
 import :aliases;
-#endif
 
 namespace linapi
 {
-	export class unique_handle;
+	class unique_handle;
 	export template< class CharT, class Traits >
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const linapi::unique_handle& rhs);
-#ifdef __linux__
 	export bool is_blank(handle_t h) noexcept;
-#endif
 }
 namespace std
 {
@@ -22,10 +19,6 @@ namespace std
 	struct hash< linapi::unique_handle >;
 	export void swap(linapi::unique_handle& lhs, linapi::unique_handle& rhs) noexcept;
 }
-
-#ifdef __linux__
-
-import :aliases;
 
 class linapi::unique_handle
 {
@@ -42,7 +35,7 @@ public:
 
 	handle_t get() const noexcept;
 	handle_t release() noexcept;
-	void reset(handle_t new_handle = nullptr) noexcept;
+	void reset(handle_t new_handle = -1) noexcept;
 	void swap(unique_handle& rhs) noexcept;
 	void close() noexcept;
 
@@ -54,7 +47,7 @@ public:
 	bool operator==(std::nullptr_t) noexcept;
 
 private:
-	handle_t native_ = nullptr;
+	handle_t native_ = -1;
 };
 template<>
 struct std::hash< linapi::unique_handle >: hash< linapi::handle_t >

@@ -52,7 +52,7 @@ void winapi::unique_handle::close() noexcept
 {
 	if (operator bool())
 	{
-		::CloseHandle(release());
+		winapi::CloseHandle(release());
 	}
 }
 

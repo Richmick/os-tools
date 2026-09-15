@@ -1,8 +1,9 @@
 module os.linapi;
 
 #ifdef __linux__
+import std;
 
-bool winapi::is_blank(handle_t h) noexcept
+bool linapi::is_blank(handle_t h) noexcept
 {
 	return h < 0;
 }
@@ -47,7 +48,7 @@ void linapi::unique_handle::close() noexcept
 {
 	if (operator bool())
 	{
-		::CloseHandle(release());
+		linapi::close(release());
 	}
 }
 

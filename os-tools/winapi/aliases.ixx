@@ -6,7 +6,6 @@ module;
 export module os.winapi:aliases;
 
 #ifdef _WIN32
-
 import std;
 
 export namespace winapi
@@ -84,16 +83,6 @@ export namespace winapi
 				const CharT* dir = nullptr);
 	template< class CharT >
 	dword_t get_module_file_name(hmodule_t mod, CharT* buf, std::size_t len);
-
-	enum class priority: dword_t
-	{
-		idle = IDLE_PRIORITY_CLASS,
-		lower = BELOW_NORMAL_PRIORITY_CLASS,
-		normal = NORMAL_PRIORITY_CLASS,
-		greater = ABOVE_NORMAL_PRIORITY_CLASS,
-		high = HIGH_PRIORITY_CLASS,
-		realtime = REALTIME_PRIORITY_CLASS,
-	};
 }
 
 template< class CharT >

@@ -9,18 +9,83 @@ export module os.winapi:thread;
 import std;
 import :aliases;
 import :handle;
-#endif
+import :process;
 
 export namespace winapi
 {
-	class thread;
+	class thread
+	{
+	public:
+		enum class priority;
+		struct initial_params;
+		using native_handle_type = handle_t;
+		using id = dword_t;
+		using thread_function_t = LPTHREAD_START_ROUTINE;
+
+		thread() noexcept = default;
+		thread(thread&& rhs) noexcept;
+		explicit thread(native_handle_type h) noexcept;
+		explicit thread(unique_handle&& h) noexcept;
+
+		template< class F, class... Args >
+		explicit thread(F&& f, Args&&... args);
+		template< class F, class... Args >
+		explicit thread(const initial_params& params, F&& f, Args&&... args);
+		explicit thread(thread_function_t f, void* data);
+		explicit thread(const initial_params& params, thread_function_t f, void* data);
+
+		template< class F, class... Args >
+		explicit thread(const process& proc, F&& f, Args&&... args);
+		template< class F, class... Args >
+		explicit thread(const process& proc, const initial_params& params, F&& f, Args&&... args);
+		explicit thread(const process& proc, thread_function_t f, void* data);
+		explicit thread(const process& proc, const initial_params& params, thread_function_t f, void* data);
+
+		~thread();
+		thread& operator=(thread&& rhs) noexcept;
+
+		static unsigned int hardware_concurrency() noexcept;
+
+		native_handle_type native() const noexcept;
+		native_handle_type native_handle() const noexcept;
+		unique_handle release() noexcept;
+		void swap(thread& rhs) noexcept;
+		id get_id() const;
+		process::id get_process_id() const;
+
+		bool joinable() const noexcept;
+		int wait() const;
+		bool wait(std::chrono::milliseconds dur) const;
+		int join();
+		bool join(std::chrono::milliseconds dur);
+		void detach();
+
+		int exit_code() const;
+		void kill() const;
+		void kill(int exit_code) const;
+
+		priority get_priority() const;
+		void set_priority(priority p) const;
+	private:
+		static inline dword_t create_suspended = CREATE_SUSPENDED;
+		static inline dword_t stack_size_param_is_a_reservation = STACK_SIZE_PARAM_IS_A_RESERVATION;
+
+		unique_handle native_;
+
+		template< class F, class... Args >
+		static dword_t WINAPI thread_function(void* data);
+		static security_attributes_t get_attributes(const initial_params& params);
+		static dword_t get_flags(const initial_params& params);
+	};
 	namespace this_thread
 	{
-		handle_t native();
-		int id();
+		thread::native_handle_type native();
+		thread::native_handle_type native_handle();
+		thread::id get_id();
+		process::id get_process_id();
 		[[noreturn]] void exit(int code);
-		winapi::priority priority();
-		void set_priority(winapi::priority p);
+		thread::priority get_priority();
+		void set_priority(thread::priority p);
 	}
 }
 namespace std
@@ -28,65 +93,16 @@ namespace std
 	export void swap(winapi::thread& lhs, winapi::thread& rhs) noexcept;
 }
 
-#ifdef _WIN32
-
-class winapi::thread
+enum class winapi::thread::priority
 {
-public:
-	struct initial_params;
-	using thread_function_t = LPTHREAD_START_ROUTINE;
-
-	thread() noexcept = default;
-	thread(thread&& rhs) noexcept;
-	explicit thread(unique_handle&& h) noexcept;
-	explicit thread(handle_t h) noexcept;
-
-	template< class F, class... Args >
-	explicit thread(F&& f, Args&&... args);
-	template< class F, class... Args >
-	explicit thread(const initial_params& params, F&& f, Args&&... args);
-	explicit thread(thread_function_t f, void* data);
-	explicit thread(const initial_params& params, thread_function_t f, void* data);
-
-	template< class F, class... Args >
-	explicit thread(const process& proc, F&& f, Args&&... args);
-	template< class F, class... Args >
-	explicit thread(const process& proc, const initial_params& params, F&& f, Args&&... args);
-	explicit thread(const process& proc, thread_function_t f, void* data);
-	explicit thread(const process& proc, const initial_params& params, thread_function_t f, void* data);
-
-	~thread();
-	thread& operator=(thread&& rhs) noexcept;
-
-	handle_t native() const noexcept;
-	unique_handle release();
-	void swap(thread& rhs) noexcept;
-	int id();
-	int process_id();
-
-	bool joinable() const noexcept;
-	void wait();
-	bool wait(std::chrono::milliseconds dur);
-	void join();
-	bool join(std::chrono::milliseconds dur);
-	void detach();
-
-	int exit_code();
-	void kill();
-	void kill(int exit_code);
-
-	winapi::priority priority();
-	void set_priority(winapi::priority p);
-private:
-	static inline dword_t create_suspended = CREATE_SUSPENDED;
-	static inline dword_t stack_size_param_is_a_reservation = STACK_SIZE_PARAM_IS_A_RESERVATION;
-
-	unique_handle native_;
-
-	template< class F, class... Args >
-	static dword_t WINAPI thread_function(void* data);
-	static security_attributes_t get_attributes(const initial_params& params);
-	static dword_t get_flags(const initial_params& params);
+	idle = THREAD_PRIORITY_IDLE,
+	low = THREAD_PRIORITY_LOWEST,
+	lower = THREAD_PRIORITY_BELOW_NORMAL,
+	normal = NORMAL_PRIORITY_CLASS,
+	greater = THREAD_PRIORITY_ABOVE_NORMAL,
+	high = THREAD_PRIORITY_HIGHEST,
+	realtime = THREAD_PRIORITY_TIME_CRITICAL,
+	error = THREAD_PRIORITY_ERROR_RETURN
 };
 struct winapi::thread::initial_params
 {

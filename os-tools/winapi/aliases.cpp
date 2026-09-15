@@ -1,5 +1,8 @@
 module os.winapi;
 
+#ifdef _WIN32
+import std;
+
 std::system_error winapi::last_error(const char* msg)
 {
 	return {static_cast< int >(winapi::GetLastError()), std::system_category(), msg};
@@ -23,3 +26,5 @@ bool winapi::wait(handle_t h, std::chrono::milliseconds dur)
 	if (res == wait_timeout) return false;
 	throw winapi::last_error("failed to wait for handle");
 }
+
+#endif

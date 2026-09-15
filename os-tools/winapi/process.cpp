@@ -71,25 +71,40 @@ std::string winapi::screen(const char* arg)
 	}
 	return result += '"';
 }
+winapi::unique_handle winapi::process::create(const char* app, char* console)
+{
+	startup_info_t startup{.cb = sizeof(startup_info_t)};
+	process_info_t result;
+	if (!create_process(app, startup, result, console))
+	{
+		throw winapi::last_error("failed to start process (called self)");
+	}
+	unique_handle thread_handle{result.hThread};
+	return unique_handle{result.hProcess};
+}
 
 [[noreturn]]
 void winapi::this_process::exit(int code)
 {
 	winapi::ExitProcess(code);
 }
-winapi::handle_t winapi::this_process::native()
+winapi::process::native_handle_type winapi::this_process::native()
 {
 	return winapi::GetCurrentProcess();
 }
-int winapi::this_process::id()
+winapi::process::native_handle_type winapi::this_process::native_handle()
+{
+	return winapi::GetCurrentProcess();
+}
+winapi::process::id winapi::this_process::get_id()
 {
 	return winapi::GetCurrentProcessId();
 }
-winapi::priority winapi::this_process::priority()
+winapi::process::priority winapi::this_process::get_priority()
 {
-	return static_cast< winapi::priority >(winapi::GetPriorityClass(native()));
+	return static_cast< process::priority >(winapi::GetPriorityClass(native()));
 }
-void winapi::this_process::set_priority(winapi::priority p)
+void winapi::this_process::set_priority(process::priority p)
 {
 	if (!winapi::SetPriorityClass(native(), static_cast< dword_t >(p)))
 	{
@@ -121,7 +136,7 @@ winapi::tstring winapi::this_process::executable()
 winapi::process::process(unique_handle&& h) noexcept:
 	native_(std::move(h))
 {}
-winapi::process::process(handle_t h) noexcept:
+winapi::process::process(native_handle_type h) noexcept:
 	native_(h)
 {}
 winapi::process::process(process&& rhs) noexcept:
@@ -130,38 +145,38 @@ winapi::process::process(process&& rhs) noexcept:
 winapi::process::process(call_self_t)
 {
 	std::string executable = winapi::this_process::executable();
-	startup_info_t startup{.cb = sizeof(startup_info_t)};
-	process_info_t result;
-	if (!create_process(executable.data(), startup, result))
-	{
-		throw winapi::last_error("failed to start process (called self)");
-	}
-	unique_handle thread_handle{result.hThread};
-	native_.reset(result.hProcess);
+	native_ = create(executable.data(), nullptr);
 }
-winapi::process::process(call_self_t, std::span< const char*const > args)
+winapi::process::process(call_self_t, std::span< const char*const > args):
+	process(prepare_cmd_args(this_process::executable(), args))
+{}
+winapi::process::process(call_self_t, std::span< const std::string > args):
+	process(prepare_cmd_args(this_process::executable(), args))
+{}
+winapi::process::process(call_self_t, std::string args)
 {
-	std::string cmd = prepare_cmd_args(this_process::executable(), args);
-	startup_info_t startup{.cb = sizeof(startup_info_t)};
-	process_info_t result;
-	if (!create_process< char >(nullptr, startup, result, cmd.data()))
-	{
-		throw winapi::last_error("failed to start process (called self)");
-	}
-	unique_handle thread_handle{result.hThread};
-	native_.reset(result.hProcess);
+	std::string executable = winapi::this_process::executable();
+	native_ = create(executable.data(), args.data());
 }
-winapi::process::process(call_self_t, std::span< const std::string > args)
+winapi::process::process(const std::string& app, std::span< const std::string > args):
+	process(prepare_cmd_args(app, args))
+{}
+winapi::process::process(const char* app, std::span< const std::string > args):
+	process(prepare_cmd_args(app, args))
+{}
+winapi::process::process(const char* app, std::span< const char*const > args):
+	process(prepare_cmd_args(app, args))
+{}
+winapi::process::process(const std::string& app, std::string args)
 {
-	std::string cmd = prepare_cmd_args(this_process::executable(), args);
-	startup_info_t startup{.cb = sizeof(startup_info_t)};
-	process_info_t result;
-	if (!create_process< char >(nullptr, startup, result, cmd.data()))
-	{
-		throw winapi::last_error("failed to start process (called self)");
-	}
-	unique_handle thread_handle{result.hThread};
-	native_.reset(result.hProcess);
+	native_ = create(app.data(), args.data());
+}
+winapi::process::process(std::span< const char*const > cl_cmd):
+	process(join_args(cl_cmd))
+{}
+winapi::process::process(std::string cl_cmd)
+{
+	native_ = create(nullptr, cl_cmd.data());
 }
 winapi::process& winapi::process::operator=(process&& rhs) noexcept
 {
@@ -173,48 +188,58 @@ winapi::process::~process()
 {
 	if (joinable()) std::terminate();
 }
-winapi::handle_t winapi::process::native() const noexcept
+winapi::process::native_handle_type winapi::process::native() const noexcept
 {
 	return native_.get();
 }
-winapi::unique_handle winapi::process::release()
+winapi::process::native_handle_type winapi::process::native_handle() const noexcept
 {
-	return std::move(native_);
+	return native_.get();
+}
+winapi::handle_t winapi::process::release() noexcept
+{
+	return native_.release();
 }
 void winapi::process::swap(process& rhs) noexcept
 {
 	native_.swap(rhs.native_);
 }
-int winapi::process::id()
+winapi::process::id winapi::process::get_id() const
 {
 	dword_t result = winapi::GetProcessId(native_.get());
 	if (result == 0) throw winapi::last_error("failed to get process id");
-	return static_cast< int >(result);
+	return result;
 }
 bool winapi::process::joinable() const noexcept
 {
 	return native_;
 }
-void winapi::process::wait()
+bool winapi::process::alive() const
 {
-	if (id() == this_process::id())
+	return !wait(std::chrono::milliseconds{0});
+}
+int winapi::process::wait() const
+{
+	if (get_id() == this_process::get_id())
 		throw std::system_error{std::make_error_code(std::errc::resource_deadlock_would_occur),
 					"join process to self"};
 	if (!joinable()) throw std::invalid_argument{"wait for not joinable process"};
 	winapi::wait(native_.get());
+	return exit_code();
 }
-bool winapi::process::wait(std::chrono::milliseconds dur)
+bool winapi::process::wait(std::chrono::milliseconds dur) const
 {
-	if (id() == this_process::id())
+	if (get_id() == this_process::get_id())
 		throw std::system_error{std::make_error_code(std::errc::resource_deadlock_would_occur),
 					"join process to self"};
 	if (!joinable()) throw std::invalid_argument{"wait for not joinable process"};
 	return winapi::wait(native_.get(), dur);
 }
-void winapi::process::join()
+int winapi::process::join()
 {
-	wait();
+	int code = wait();
 	native_.reset();
+	return code;
 }
 bool winapi::process::join(std::chrono::milliseconds dur)
 {
@@ -229,18 +254,18 @@ void winapi::process::detach()
 {
 	native_.reset();
 }
-winapi::priority winapi::process::priority()
+winapi::process::priority winapi::process::get_priority() const
 {
-	return static_cast< winapi::priority >(winapi::GetPriorityClass(native_.get()));
+	return static_cast< priority >(winapi::GetPriorityClass(native_.get()));
 }
-void winapi::process::set_priority(winapi::priority p)
+void winapi::process::set_priority(priority p) const
 {
-	if (!winapi::SetPriorityClass(native_.get(), static_cast<dword_t>(p)))
+	if (!winapi::SetPriorityClass(native_.get(), static_cast< dword_t >(p)))
 	{
 		throw winapi::last_error("failed to set process priority");
 	}
 }
-int winapi::process::exit_code()
+int winapi::process::exit_code() const
 {
 	dword_t result;
 	if (!winapi::GetExitCodeProcess(native_.get(), &result))
