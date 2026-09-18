@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.3
+		VERSION 0.0.4
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )
@@ -34,6 +34,8 @@ add_library(${PROJECT_NAME})
 add_library(os-tools::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
 
 set(cxx_sources
+	"os-tools/argv_parser.cpp"
+
 	"os-tools/winapi/aliases.cpp"
 	"os-tools/winapi/handle.cpp"
 	"os-tools/winapi/thread.cpp"
@@ -45,7 +47,7 @@ set(cxx_sources
 	"os-tools/linapi/process.cpp"
 )
 set(cxx_modules
-	"os-tools/args_parser.ixx"
+	"os-tools/argv_parser.ixx"
 	"os-tools/os.ixx"
 
 	"os-tools/winapi.ixx"

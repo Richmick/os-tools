@@ -34,10 +34,6 @@ export namespace winapi
 		explicit thread(thread_function_t f, void* data);
 		explicit thread(const initial_params& params, thread_function_t f, void* data);
 
-		template< class F, class... Args >
-		explicit thread(const process& proc, F&& f, Args&&... args);
-		template< class F, class... Args >
-		explicit thread(const process& proc, const initial_params& params, F&& f, Args&&... args);
 		explicit thread(const process& proc, thread_function_t f, void* data);
 		explicit thread(const process& proc, const initial_params& params, thread_function_t f, void* data);
 
@@ -141,26 +137,6 @@ winapi::thread::thread(const initial_params& params, F&& f, Args&&...args)
 				std::forward_as_tuple(std::forward< Args >(args)...),
 				std::forward_as_tuple(std::forward< F >(f)));
 	*this = thread{params, &thread_function< F, Args... >, static_cast< void* >(data.get())};
-	data.release();
-}
-template< class F, class... Args >
-winapi::thread::thread(const process& proc, F&& f, Args&&... args)
-{
-	using data_t = std::pair< std::tuple< std::decay_t< Args >... >, F >;
-	std::unique_ptr data = std::make_unique< data_t >(std::piecewise_construct,
-				std::forward_as_tuple(std::forward< Args >(args)...),
-				std::forward_as_tuple(std::forward< F >(f)));
-	*this = thread{proc, &thread_function< F, Args... >, static_cast< void* >(data.get())};
-	data.release();
-}
-template< class F, class ...Args >
-winapi::thread::thread(const process& proc, const initial_params& params, F&& f, Args&&...args)
-{
-	using data_t = std::pair< std::tuple< std::decay_t< Args >... >, F >;
-	std::unique_ptr data = std::make_unique< data_t >(std::piecewise_construct,
-				std::forward_as_tuple(std::forward< Args >(args)...),
-				std::forward_as_tuple(std::forward< F >(f)));
-	*this = thread{proc, params, &thread_function< F, Args... >, static_cast< void* >(data.get())};
 	data.release();
 }
 
