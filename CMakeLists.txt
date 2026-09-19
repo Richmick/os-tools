@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.4
+		VERSION 0.0.5
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )

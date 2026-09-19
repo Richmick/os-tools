@@ -16,10 +16,15 @@ void thread_func(std::chrono::system_clock::time_point deadline)
 
 int main(int argc, const char*const* argv)
 {
-	std::println("{} {} priority proc_{}::thread_{}", os::this_process::get_id(),
+	std::println("{} {} priority proc_{}::thread_{}",
+				os::this_process::get_id(),
 				os::this_process::executable(),
 				static_cast< int >(os::this_process::get_priority()),
 				static_cast< int >(os::this_thread::get_priority()));
+
+	std::optional test_var = os::this_process::get_env("test_var");
+	if (test_var) std::println("test_var = \"{}\"", *test_var);
+	else std::println("test_var is not set");
 
 	os::argv_parser parser;
 	parser.add_flag("slave", 's');
@@ -57,6 +62,7 @@ int main(int argc, const char*const* argv)
 		std::println("{} exited", os::this_process::get_id());
 		return 1;
 	}
+	os::this_process::set_env("test_var", "env was inherited");
 	std::vector< std::string > args = {"-s", std::format("--nthreads={}", nthreads),
 				std::format("--lifetime={}", lifetime.count())};
 	os::process proc{os::call_self, args};
@@ -66,4 +72,8 @@ int main(int argc, const char*const* argv)
 	std::println("child is alive - {}", proc.alive());
 	std::println("child join got result - {}", proc.join());
 	std::println("{} exited", os::this_process::get_id());
+	for (const auto& keyval : os::this_process::environment())
+	{
+		std::println("\"{}\": \"{}\"", keyval.first, keyval.second);
+	}
 }

@@ -6,21 +6,21 @@ import std;
 [[noreturn]]
 void linapi::this_thread::exit(int code)
 {
-	linapi::pthread_exit(reinterpret_cast< void* >(code));
+	linapi::calls::pthread_exit(reinterpret_cast< void* >(code));
 }
 [[noreturn]]
 void linapi::this_thread::exit(void* data)
 {
-	linapi::pthread_exit(data);
+	linapi::calls::pthread_exit(data);
 }
 
 linapi::thread_handle_t linapi::this_thread::native()
 {
-	return linapi::pthread_self();
+	return linapi::calls::pthread_self();
 }
 linapi::thread_handle_t linapi::this_thread::native_handle()
 {
-	return linapi::pthread_self();
+	return linapi::calls::pthread_self();
 }
 linapi::thread::id linapi::this_thread::get_id()
 {
@@ -30,7 +30,7 @@ linapi::thread::priority linapi::this_thread::get_priority()
 {
 	int prior;
 	scheduler_settings_t param;
-	if (linapi::pthread_getschedparam(this_thread::native(), &prior, &param) != 0)
+	if (linapi::calls::pthread_getschedparam(this_thread::native(), &prior, &param) != 0)
 	{
 		throw linapi::last_error("failed to get thread priority");
 	}
@@ -38,7 +38,7 @@ linapi::thread::priority linapi::this_thread::get_priority()
 }
 void linapi::this_thread::set_priority(thread::priority p)
 {
-	if (linapi::pthread_setschedprio(this_thread::native(), static_cast< int >(p)) != 0)
+	if (linapi::calls::pthread_setschedprio(this_thread::native(), static_cast< int >(p)) != 0)
 	{
 		throw linapi::last_error("failed to set thread priority");
 	}
@@ -52,7 +52,7 @@ linapi::thread::thread(thread&& rhs) noexcept:
 {}
 linapi::thread::thread(thread_function_t f, void* data)
 {
-	if (linapi::pthread_create(&native_, nullptr, f, data) != 0)
+	if (linapi::calls::pthread_create(&native_, nullptr, f, data) != 0)
 	{
 		throw linapi::last_error("failed to start thread");
 	}
@@ -63,28 +63,28 @@ linapi::thread::thread(const initial_params& params, thread_function_t f, void* 
 	thread_attributes_t* attributes = params.attributes;
 	if (attributes == nullptr)
 	{
-		if (linapi::pthread_attr_init(&attributes_impl) != 0)
+		if (linapi::calls::pthread_attr_init(&attributes_impl) != 0)
 			throw linapi::last_error("failed to initialize pthread_attr_t");
 		attributes = &attributes_impl;
 	}
-	if (linapi::pthread_attr_setstacksize(attributes, params.stack_size) != 0)
+	if (linapi::calls::pthread_attr_setstacksize(attributes, params.stack_size) != 0)
 		throw linapi::last_error("failed to set thread stack size");
 	if (params.use_priority)
 	{
-		if (linapi::pthread_attr_setinheritsched(attributes, explicit_priority) != 0)
+		if (linapi::calls::pthread_attr_setinheritsched(attributes, explicit_priority) != 0)
 			throw linapi::last_error("failed to set thread explicit shed");
-		if (linapi::pthread_attr_setschedpolicy(attributes, static_cast< int >(params.explicit_priority)) != 0)
+		if (linapi::calls::pthread_attr_setschedpolicy(attributes, static_cast< int >(params.explicit_priority)) != 0)
 			throw linapi::last_error("failed to set thread priority");
 	}
-	else if (linapi::pthread_attr_setinheritsched(attributes, implicit_priority) != 0)
+	else if (linapi::calls::pthread_attr_setinheritsched(attributes, implicit_priority) != 0)
 		throw linapi::last_error("failed to set thread implicit shed");
 
-	if (linapi::pthread_create(&native_, attributes, f, data) != 0)
+	if (linapi::calls::pthread_create(&native_, attributes, f, data) != 0)
 	{
-		if (params.attributes == nullptr) linapi::pthread_attr_destroy(&attributes_impl);
+		if (params.attributes == nullptr) linapi::calls::pthread_attr_destroy(&attributes_impl);
 		throw linapi::last_error("failed to start thread");
 	}
-	if ((params.attributes == nullptr) && (linapi::pthread_attr_destroy(&attributes_impl) != 0))
+	if ((params.attributes == nullptr) && (linapi::calls::pthread_attr_destroy(&attributes_impl) != 0))
 		throw linapi::last_error("failed to destroy pthread_attr_t");
 }
 linapi::thread::~thread()
@@ -143,7 +143,7 @@ void* linapi::thread::join_val()
 	if (!joinable())
 		throw std::invalid_argument{"join for not joinable thread"};
 	void* result;
-	if (linapi::pthread_join(native_, &result) != 0)
+	if (linapi::calls::pthread_join(native_, &result) != 0)
 	{
 		throw linapi::last_error("failed to join thread");
 	}
@@ -152,7 +152,7 @@ void* linapi::thread::join_val()
 }
 void linapi::thread::detach()
 {
-	if (linapi::pthread_detach(native_) != 0)
+	if (linapi::calls::pthread_detach(native_) != 0)
 	{
 		throw linapi::last_error("failed to detach thread");
 	}
@@ -160,7 +160,7 @@ void linapi::thread::detach()
 }
 void linapi::thread::kill() const
 {
-	if (linapi::pthread_kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
+	if (linapi::calls::pthread_kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
 	{
 		throw linapi::last_error("failed to kill thread");
 	}
@@ -169,7 +169,7 @@ linapi::thread::priority linapi::thread::get_priority() const
 {
 	int prior;
 	scheduler_settings_t param;
-	if (linapi::pthread_getschedparam(native_, &prior, &param) != 0)
+	if (linapi::calls::pthread_getschedparam(native_, &prior, &param) != 0)
 	{
 		throw linapi::last_error("failed to get thread priority");
 	}
@@ -177,7 +177,7 @@ linapi::thread::priority linapi::thread::get_priority() const
 }
 void linapi::thread::set_priority(priority p) const
 {
-	if (linapi::pthread_setschedprio(native_, static_cast< int >(p)) != 0)
+	if (linapi::calls::pthread_setschedprio(native_, static_cast< int >(p)) != 0)
 	{
 		throw linapi::last_error("failed to set thread priority");
 	}

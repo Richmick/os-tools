@@ -48,7 +48,7 @@ void linapi::unique_handle::close() noexcept
 {
 	if (operator bool())
 	{
-		linapi::close(release());
+		linapi::calls::close(release());
 	}
 }
 

@@ -102,11 +102,13 @@ enum class winapi::thread::priority
 };
 struct winapi::thread::initial_params
 {
-	security_attributes_t attributes{};
+	security_attributes_t* attributes = nullptr; // can be modified to match requested params
 	bool inherit_handles = false;
 	bool create_suspended = false;
 	std::size_t stack_size = 0; // default size
 	bool defer_stack_commit = false; // reserve stack adresses but do not allocate
+	priority explicit_priority = priority::normal;
+	bool use_priority = false;
 };
 
 template< class F, class... Args >

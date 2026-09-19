@@ -45,11 +45,11 @@ linapi::ready_args_t linapi::prepare_cmd_args(const std::string& app, std::span<
 }
 linapi::process::native_handle_type linapi::process::create(const char* app, char*const* argv)
 {
-	process_handle_t h = linapi::vfork();
+	process_handle_t h = linapi::calls::vfork();
 	if (h == 0)
 	{
-		linapi::execv(app, argv);
-		linapi::_exit(-1);
+		linapi::calls::execv(app, argv);
+		linapi::calls::_exit(-1);
 	}
 	else if (h == -1)
 	{
@@ -65,11 +65,11 @@ void linapi::this_process::exit(int code)
 }
 linapi::process::native_handle_type linapi::this_process::native()
 {
-	return linapi::getpid();
+	return linapi::calls::getpid();
 }
 linapi::process::native_handle_type linapi::this_process::native_handle()
 {
-	return linapi::getpid();
+	return linapi::calls::getpid();
 }
 linapi::process::id linapi::this_process::get_id()
 {
@@ -77,11 +77,11 @@ linapi::process::id linapi::this_process::get_id()
 }
 linapi::process::native_handle_type linapi::this_process::parent_native()
 {
-	return linapi::getppid();
+	return linapi::calls::getppid();
 }
 linapi::process::native_handle_type linapi::this_process::parent_native_handle()
 {
-	return linapi::getppid();
+	return linapi::calls::getppid();
 }
 linapi::process::id linapi::this_process::get_parent_id()
 {
@@ -89,7 +89,7 @@ linapi::process::id linapi::this_process::get_parent_id()
 }
 linapi::process::priority linapi::this_process::get_priority()
 {
-	int res = linapi::sched_getscheduler(this_process::native());
+	int res = linapi::calls::sched_getscheduler(this_process::native());
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to get process priority");
@@ -99,7 +99,7 @@ linapi::process::priority linapi::this_process::get_priority()
 void linapi::this_process::set_priority(process::priority p)
 {
 	scheduler_settings_t param{};
-	int res = linapi::sched_setscheduler(this_process::native(), static_cast< int >(p), &param);
+	int res = linapi::calls::sched_setscheduler(this_process::native(), static_cast< int >(p), &param);
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to set process priority");
@@ -112,22 +112,60 @@ std::string linapi::this_process::executable()
 
 	{
 		char buf[length];
-		std::ptrdiff_t res_len = linapi::readlink(symlink, buf, length);
+		std::ptrdiff_t res_len = linapi::calls::readlink(symlink, buf, length);
 		if (res_len < 0) throw linapi::last_error("failed to retrieve executable");
 		buf[res_len] = '\0';
 		if (res_len < length) return {buf, static_cast< std::size_t >(res_len)};
 	}
 	std::string buf;
 	buf.reserve(length * 2);
-	std::size_t res_len = linapi::readlink(symlink, buf.data(), buf.size());
+	std::size_t res_len = linapi::calls::readlink(symlink, buf.data(), buf.size());
 	while (res_len == buf.size())
 	{
 		buf.clear();
 		buf.reserve(res_len * 2);
-		res_len = linapi::readlink(symlink, buf.data(), buf.size());
+		res_len = linapi::calls::readlink(symlink, buf.data(), buf.size());
 	}
 	if (res_len == 0) throw linapi::last_error("failed to retrieve executable");
 	return {buf, static_cast< std::size_t >(res_len)};
+}
+std::optional< std::string > linapi::this_process::get_env(const std::string& name)
+{
+	const char* res = linapi::calls::getenv(name.c_str());
+	if (res == nullptr) return std::nullopt;
+	return std::optional< std::string >{std::in_place, res};
+}
+void linapi::this_process::set_env(const std::string& name, const std::string& value)
+{
+	if (linapi::calls::setenv(name.c_str(), value.c_str(), true) != 0)
+	{
+		throw linapi::last_error("failed to delete env var");
+	}
+}
+void linapi::this_process::delete_env(const std::string& name)
+{
+	if (linapi::calls::unsetenv(name.c_str()) != 0)
+	{
+		throw linapi::last_error("failed to delete env var");
+	}
+}
+std::unordered_map< std::string, std::string > linapi::this_process::environment()
+{
+	std::unordered_map< std::string, std::string > result;
+	const char*const* caret = linapi::environ;
+	if (caret == nullptr) return result;
+	for (; *caret != nullptr; caret++)
+	{
+		std::string_view line{*caret};
+		std::string_view::size_type eq_sign = line.find_first_of('=');
+		if (eq_sign == std::string_view::npos)
+		{
+			throw std::runtime_error{"no equal sign in env variable"};
+		}
+		std::string_view key = line.substr(0, eq_sign), value = line.substr(eq_sign + 1);
+		result.emplace(key, value);
+	}
+	return result;
 }
 
 linapi::process::process(native_handle_type h) noexcept:
@@ -214,7 +252,7 @@ bool linapi::process::alive() const
 	if (!joinable()) throw std::invalid_argument{"wait for not joinable process"};
 
 	siginfo_t result;
-	if (linapi::waitid(pid_entity, native_, &result, wait_for_exit | wait_only | wait_immediate) < 0)
+	if (linapi::calls::waitid(pid_entity, native_, &result, wait_for_exit | wait_only | wait_immediate) < 0)
 	{
 		throw linapi::last_error("failed to wait process");
 	}
@@ -228,7 +266,7 @@ int linapi::process::wait() const
 	if (!joinable()) throw std::invalid_argument{"wait for not joinable process"};
 
 	siginfo_t result;
-	if (linapi::waitid(pid_entity, native_, &result, wait_for_exit | wait_only) < 0)
+	if (linapi::calls::waitid(pid_entity, native_, &result, wait_for_exit | wait_only) < 0)
 	{
 		throw linapi::last_error("failed to wait process");
 	}
@@ -242,7 +280,7 @@ int linapi::process::join()
 	if (!joinable()) throw std::invalid_argument{"wait for not joinable process"};
 
 	int result;
-	if (linapi::waitpid(native_, &result, 0) < 0)
+	if (linapi::calls::waitpid(native_, &result, 0) < 0)
 	{
 		throw linapi::last_error("failed to join process");
 	}
@@ -251,7 +289,7 @@ int linapi::process::join()
 }
 linapi::process::priority linapi::process::get_priority() const
 {
-	int res = linapi::sched_getscheduler(native_);
+	int res = linapi::calls::sched_getscheduler(native_);
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to get process priority");
@@ -261,7 +299,7 @@ linapi::process::priority linapi::process::get_priority() const
 void linapi::process::set_priority(priority p) const
 {
 	scheduler_settings_t param{};
-	int res = linapi::sched_setscheduler(native_, static_cast< int >(p), &param);
+	int res = linapi::calls::sched_setscheduler(native_, static_cast< int >(p), &param);
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to set process priority");
@@ -270,7 +308,7 @@ void linapi::process::set_priority(priority p) const
 int linapi::process::exit_code() const
 {
 	siginfo_t result;
-	if (linapi::waitid(pid_entity, native_, &result, wait_for_exit | wait_only | wait_immediate) < 0)
+	if (linapi::calls::waitid(pid_entity, native_, &result, wait_for_exit | wait_only | wait_immediate) < 0)
 	{
 		throw linapi::last_error("failed to wait process");
 	}
@@ -282,7 +320,7 @@ int linapi::process::exit_code() const
 }
 void linapi::process::kill()
 {
-	if (linapi::kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
+	if (linapi::calls::kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
 	{
 		throw linapi::last_error("failed to kill process");
 	}

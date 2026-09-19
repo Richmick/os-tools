@@ -6,19 +6,19 @@ import std;
 [[noreturn]]
 void winapi::this_thread::exit(int code)
 {
-	winapi::ExitThread(code);
+	winapi::calls::ExitThread(code);
 }
 winapi::thread::native_handle_type winapi::this_thread::native()
 {
-	return winapi::GetCurrentThread();
+	return winapi::calls::GetCurrentThread();
 }
 winapi::thread::native_handle_type winapi::this_thread::native_handle()
 {
-	return winapi::GetCurrentThread();
+	return winapi::calls::GetCurrentThread();
 }
 winapi::thread::id winapi::this_thread::get_id()
 {
-	return winapi::GetCurrentThreadId();
+	return winapi::calls::GetCurrentThreadId();
 }
 winapi::process::id winapi::this_thread::get_process_id()
 {
@@ -26,7 +26,7 @@ winapi::process::id winapi::this_thread::get_process_id()
 }
 winapi::thread::priority winapi::this_thread::get_priority()
 {
-	int res = winapi::GetThreadPriority(native());
+	int res = winapi::calls::GetThreadPriority(native());
 	if (res == static_cast< int >(winapi::thread::priority::error))
 	{
 		throw winapi::last_error("failed to set thread priority");
@@ -35,7 +35,7 @@ winapi::thread::priority winapi::this_thread::get_priority()
 }
 void winapi::this_thread::set_priority(thread::priority p)
 {
-	if (!winapi::SetThreadPriority(native(), static_cast< int >(p)))
+	if (!winapi::calls::SetThreadPriority(native(), static_cast< int >(p)))
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}
@@ -52,7 +52,7 @@ winapi::thread::thread(thread&& rhs) noexcept:
 {}
 winapi::thread::thread(thread_function_t f, void* data)
 {
-	native_ = unique_handle{winapi::CreateThread(nullptr, 0, f, data, 0, nullptr)};
+	native_ = unique_handle{winapi::calls::CreateThread(nullptr, 0, f, data, 0, nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
@@ -61,16 +61,20 @@ winapi::thread::thread(thread_function_t f, void* data)
 winapi::thread::thread(const initial_params& params, thread_function_t f, void* data)
 {
 	security_attributes_t attributes = get_attributes(params);
-	native_ = unique_handle{winapi::CreateThread(&attributes, params.stack_size,
+	native_ = unique_handle{winapi::calls::CreateThread(&attributes, params.stack_size,
 					f, data, get_flags(params), nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
 	}
+	if (params.use_priority)
+	{
+		set_priority(params.explicit_priority);
+	}
 }
 winapi::thread::thread(const process& proc, thread_function_t f, void* data)
 {
-	native_ = unique_handle{winapi::CreateRemoteThread(proc.native(), nullptr, 0, f, data, 0, nullptr)};
+	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native(), nullptr, 0, f, data, 0, nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
@@ -79,11 +83,15 @@ winapi::thread::thread(const process& proc, thread_function_t f, void* data)
 winapi::thread::thread(const process& proc, const initial_params& params, thread_function_t f, void* data)
 {
 	security_attributes_t attributes = get_attributes(params);
-	native_ = unique_handle{winapi::CreateRemoteThread(proc.native(), &attributes, params.stack_size,
+	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native(), &attributes, params.stack_size,
 					f, data, get_flags(params), nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
+	}
+	if (params.use_priority)
+	{
+		set_priority(params.explicit_priority);
 	}
 }
 winapi::thread::~thread()
@@ -103,9 +111,9 @@ unsigned int winapi::thread::hardware_concurrency() noexcept
 }
 winapi::security_attributes_t winapi::thread::get_attributes(const initial_params& params)
 {
-	security_attributes_t attributes = params.attributes;
+	security_attributes_t attributes = (params.attributes != nullptr ? *params.attributes : security_attributes_t{});
 	if (params.inherit_handles) attributes.bInheritHandle = true;
-	if (params.attributes.nLength == 0) attributes.nLength = sizeof(security_attributes_t);
+	if (attributes.nLength == 0) attributes.nLength = sizeof(security_attributes_t);
 	return attributes;
 }
 winapi::dword_t winapi::thread::get_flags(const initial_params& params)
@@ -134,13 +142,13 @@ void winapi::thread::swap(thread& rhs) noexcept
 }
 winapi::thread::id winapi::thread::get_id() const
 {
-	dword_t result = winapi::GetThreadId(native_.get());
+	dword_t result = winapi::calls::GetThreadId(native_.get());
 	if (result == 0) throw winapi::last_error("failed to get thread id");
 	return result;
 }
 winapi::process::id winapi::thread::get_process_id() const
 {
-	dword_t result = winapi::GetProcessIdOfThread(native_.get());
+	dword_t result = winapi::calls::GetProcessIdOfThread(native_.get());
 	if (result == 0) throw winapi::last_error("failed to get process id of thread");
 	return result;
 }
@@ -189,7 +197,7 @@ void winapi::thread::detach()
 int winapi::thread::exit_code() const
 {
 	dword_t result;
-	if (!winapi::GetExitCodeThread(native_.get(), &result))
+	if (!winapi::calls::GetExitCodeThread(native_.get(), &result))
 	{
 		throw winapi::last_error("failed to get process exit code");
 	}
@@ -201,14 +209,14 @@ void winapi::thread::kill() const
 }
 void winapi::thread::kill(int exit_code) const
 {
-	if (!winapi::TerminateThread(native_.get(), exit_code))
+	if (!winapi::calls::TerminateThread(native_.get(), exit_code))
 	{
 		throw winapi::last_error("failed to terminate thread");
 	}
 }
 winapi::thread::priority winapi::thread::get_priority() const
 {
-	int res = winapi::GetThreadPriority(native_.get());
+	int res = winapi::calls::GetThreadPriority(native_.get());
 	if (res == static_cast< int >(priority::error))
 	{
 		throw winapi::last_error("failed to set thread priority");
@@ -217,7 +225,7 @@ winapi::thread::priority winapi::thread::get_priority() const
 }
 void winapi::thread::set_priority(priority p) const
 {
-	if (!winapi::SetThreadPriority(native_.get(), static_cast< int >(p)))
+	if (!winapi::calls::SetThreadPriority(native_.get(), static_cast< int >(p)))
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}

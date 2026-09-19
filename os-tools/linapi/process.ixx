@@ -82,6 +82,10 @@ export namespace linapi
 		process::native_handle_type parent_native_handle();
 		process::id get_parent_id();
 		std::string executable();
+		std::optional< std::string > get_env(const std::string& name);
+		void set_env(const std::string& name, const std::string& value);
+		void delete_env(const std::string& name);
+		std::unordered_map< std::string, std::string > environment();
 		[[noreturn]] void exit(int code);
 		process::priority get_priority();
 		void set_priority(process::priority p);

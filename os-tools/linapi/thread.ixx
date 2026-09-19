@@ -54,7 +54,7 @@ namespace linapi
 	private:
 		static constexpr int implicit_priority = PTHREAD_INHERIT_SCHED;
 		static constexpr int explicit_priority = PTHREAD_EXPLICIT_SCHED;
-		thread_handle_t native_;
+		thread_handle_t native_{};
 
 		template< class F, class... Args >
 		static void* thread_function(void* data);
@@ -77,7 +77,7 @@ namespace std
 
 struct linapi::thread::initial_params
 {
-	thread_attributes_t* attributes = nullptr; // can be modifyed to match requested params
+	thread_attributes_t* attributes = nullptr; // can be modified to match requested params
 	std::size_t stack_size = 0; // default size
 	priority explicit_priority = priority::normal;
 	bool use_priority = false;

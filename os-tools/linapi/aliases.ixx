@@ -1,5 +1,6 @@
 module;
 	#ifdef __linux__
+		#include <cstdlib>
 		#include <unistd.h>
 		#include <pthread.h>
 		#include <spawn.h>
@@ -25,45 +26,52 @@ export namespace linapi
 	using process_handle_t = pid_t;
 	using thread_attributes_t = pthread_attr_t;
 
-	using ::readlink;
-	using ::close;
-
-	// Process
-	using ::getpid;
-	using ::getppid;
 	using ::environ;
-	using ::kill;
-	using ::posix_spawn;
-	using ::fork;
-	using ::vfork;
-	using ::_exit;
-	using ::execl; // (const char* path, const char* arg0, ... /*, (char *)0 */);
-	using ::execle; // (const char* path, const char* arg0, ... /*,(char *)0, char *const envp[]*/);
-	using ::execlp; // (const char* file, const char* arg0, ... /*, (char *)0 */);
-	using ::execv; // (const char* path, char* const argv[]);
-	using ::execve; // (const char* path, char* const argv[], char* const envp[]);
-	using ::execvp; // (const char* file, char* const argv[]);
-	using ::fexecve; // (int fd, char* const argv[], char* const envp[]);
-	using ::waitid;
-	using ::waitpid;
-	using ::sched_getscheduler;
-	using ::sched_setscheduler;
 
-	// Thread
-	using ::pthread_create;
-	using ::pthread_exit;
-	using ::pthread_join;
-	using ::pthread_detach;
-	using ::pthread_kill;
-	using ::pthread_self;
-	using ::pthread_setschedprio;
-	using ::pthread_setschedparam;
-	using ::pthread_getschedparam;
-	using ::pthread_attr_init;
-	using ::pthread_attr_destroy;
-	using ::pthread_attr_setstacksize;
-	using ::pthread_attr_setschedpolicy;
-	using ::pthread_attr_setinheritsched;
+	namespace calls
+	{
+		using ::readlink;
+		using ::close;
+
+		// Process
+		using ::getpid;
+		using ::getppid;
+		using ::getenv;
+		using ::setenv;
+		using ::unsetenv;
+		using ::kill;
+		using ::posix_spawn;
+		using ::fork;
+		using ::vfork;
+		using ::_exit;
+		using ::execl; // (const char* path, const char* arg0, ... /*, (char *)0 */);
+		using ::execle; // (const char* path, const char* arg0, ... /*,(char *)0, char *const envp[]*/);
+		using ::execlp; // (const char* file, const char* arg0, ... /*, (char *)0 */);
+		using ::execv; // (const char* path, char* const argv[]);
+		using ::execve; // (const char* path, char* const argv[], char* const envp[]);
+		using ::execvp; // (const char* file, char* const argv[]);
+		using ::fexecve; // (int fd, char* const argv[], char* const envp[]);
+		using ::waitid;
+		using ::waitpid;
+		using ::sched_getscheduler;
+		using ::sched_setscheduler;
+
+		// Thread
+		using ::pthread_create;
+		using ::pthread_exit;
+		using ::pthread_join;
+		using ::pthread_detach;
+		using ::pthread_kill;
+		using ::pthread_self;
+		using ::pthread_setschedprio;
+		using ::pthread_setschedparam;
+		using ::pthread_getschedparam;
+		using ::pthread_attr_init;
+		using ::pthread_attr_destroy;
+		using ::pthread_attr_setstacksize;
+		using ::pthread_attr_setschedpolicy;
+		using ::pthread_attr_setinheritsched;
+	}
 
 	std::system_error last_error(const char* msg);
 	std::system_error last_error(const std::string& msg);

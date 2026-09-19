@@ -75,7 +75,7 @@ winapi::unique_handle winapi::process::create(const char* app, char* console)
 {
 	startup_info_t startup{.cb = sizeof(startup_info_t)};
 	process_info_t result;
-	if (!create_process(app, startup, result, console))
+	if (!create_process_aw(app, startup, result, console))
 	{
 		throw winapi::last_error("failed to start process (called self)");
 	}
@@ -86,51 +86,50 @@ winapi::unique_handle winapi::process::create(const char* app, char* console)
 [[noreturn]]
 void winapi::this_process::exit(int code)
 {
-	winapi::ExitProcess(code);
+	winapi::calls::ExitProcess(code);
 }
 winapi::process::native_handle_type winapi::this_process::native()
 {
-	return winapi::GetCurrentProcess();
+	return winapi::calls::GetCurrentProcess();
 }
 winapi::process::native_handle_type winapi::this_process::native_handle()
 {
-	return winapi::GetCurrentProcess();
+	return winapi::calls::GetCurrentProcess();
 }
 winapi::process::id winapi::this_process::get_id()
 {
-	return winapi::GetCurrentProcessId();
+	return winapi::calls::GetCurrentProcessId();
 }
 winapi::process::priority winapi::this_process::get_priority()
 {
-	return static_cast< process::priority >(winapi::GetPriorityClass(native()));
+	return static_cast< process::priority >(winapi::calls::GetPriorityClass(native()));
 }
 void winapi::this_process::set_priority(process::priority p)
 {
-	if (!winapi::SetPriorityClass(native(), static_cast< dword_t >(p)))
+	if (!winapi::calls::SetPriorityClass(native(), static_cast< dword_t >(p)))
 	{
 		throw winapi::last_error("failed to set process priority");
 	}
 }
-winapi::tstring winapi::this_process::executable()
+std::string winapi::this_process::executable()
 {
-	constexpr std::size_t length = 256;
-	{
-		tchar_t buf[length];
-		std::size_t res_len = winapi::get_module_file_name(nullptr, buf, length);
-		if (res_len == 0) throw winapi::last_error("failed to retrieve executable");
-		if (res_len < length) return {buf, res_len};
-	}
-	std::string buf;
-	buf.reserve(length * 2);
-	std::size_t res_len = winapi::get_module_file_name(nullptr, buf.data(), buf.size());
-	while (res_len == buf.size())
-	{
-		buf.clear();
-		buf.reserve(res_len * 2);
-		res_len = winapi::get_module_file_name(nullptr, buf.data(), buf.size());
-	}
-	if (res_len == 0) throw winapi::last_error("failed to retrieve executable");
-	return {buf, res_len};
+	return executable_aw< char >();
+}
+std::optional< std::string > winapi::this_process::get_env(const std::string& name)
+{
+	return get_env_aw(name);
+}
+void winapi::this_process::set_env(const std::string& name, const std::string& value)
+{
+	set_env_aw(name, value);
+}
+void winapi::this_process::delete_env(const std::string& name)
+{
+	delete_env_aw(name);
+}
+std::unordered_map< std::string, std::string> winapi::this_process::environment()
+{
+	return environment_aw< char >();
 }
 
 winapi::process::process(unique_handle&& h) noexcept:
@@ -206,7 +205,7 @@ void winapi::process::swap(process& rhs) noexcept
 }
 winapi::process::id winapi::process::get_id() const
 {
-	dword_t result = winapi::GetProcessId(native_.get());
+	dword_t result = winapi::calls::GetProcessId(native_.get());
 	if (result == 0) throw winapi::last_error("failed to get process id");
 	return result;
 }
@@ -256,11 +255,11 @@ void winapi::process::detach()
 }
 winapi::process::priority winapi::process::get_priority() const
 {
-	return static_cast< priority >(winapi::GetPriorityClass(native_.get()));
+	return static_cast< priority >(winapi::calls::GetPriorityClass(native_.get()));
 }
 void winapi::process::set_priority(priority p) const
 {
-	if (!winapi::SetPriorityClass(native_.get(), static_cast< dword_t >(p)))
+	if (!winapi::calls::SetPriorityClass(native_.get(), static_cast< dword_t >(p)))
 	{
 		throw winapi::last_error("failed to set process priority");
 	}
@@ -268,7 +267,7 @@ void winapi::process::set_priority(priority p) const
 int winapi::process::exit_code() const
 {
 	dword_t result;
-	if (!winapi::GetExitCodeProcess(native_.get(), &result))
+	if (!winapi::calls::GetExitCodeProcess(native_.get(), &result))
 	{
 		throw winapi::last_error("failed to retrieve process exit code");
 	}
@@ -280,7 +279,7 @@ void winapi::process::kill()
 }
 void winapi::process::kill(int exit_code)
 {
-	if (!winapi::TerminateProcess(native_.get(), exit_code))
+	if (!winapi::calls::TerminateProcess(native_.get(), exit_code))
 	{
 		throw winapi::last_error("failed to terminate process");
 	}
