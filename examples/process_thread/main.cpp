@@ -6,12 +6,23 @@ using namespace std::chrono_literals;
 
 void thread_func(std::chrono::system_clock::time_point deadline)
 {
-	std::println("[{}] running", os::this_thread::get_id());
+	std::size_t i = 0;
+	std::println("[#{}, {}]-> running {}", os::this_thread::get_id(),
+				static_cast< int >(os::this_thread::get_priority()), i++);
 	while (std::chrono::system_clock::now() < deadline)
 	{
 		std::this_thread::sleep_for(1s);
-		std::println("[{}] running", os::this_thread::get_id());
+		std::println("[#{}, {}] running {}", os::this_thread::get_id(),
+					static_cast< int >(os::this_thread::get_priority()), i++);
 	}
+	std::println("[#{}, {}] -> start loop", os::this_thread::get_id(),
+				static_cast< int >(os::this_thread::get_priority()));
+	auto start = std::chrono::system_clock::now();
+	for (std::size_t i = 0; i < 3'000'000'000; i++)
+	{}
+	std::println("[#{}, {}] time {}", os::this_thread::get_id(),
+				static_cast< int >(os::this_thread::get_priority()),
+				std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now() - start));
 }
 
 int main(int argc, const char*const* argv)
@@ -37,24 +48,30 @@ int main(int argc, const char*const* argv)
 	try
 	{
 		flags = parser.parse(argc, argv);
+		if (flags.has("nthreads")) nthreads = std::stoull(flags["nthreads"].data());
+		if (flags.has("lifetime")) lifetime = std::chrono::seconds{std::stoull(flags["lifetime"].data())};
 	}
 	catch (const std::exception& e)
 	{
-		std::println(std::cerr, "error: {}", e.what());
+		std::println(std::cerr, "error while parsing argv: {}", e.what());
 		return 1;
 	}
-	if (flags.has("nthreads")) nthreads = std::stoull(flags["nthreads"].data());
-	if (flags.has("lifetime")) lifetime = std::chrono::seconds{std::stoull(flags["lifetime"].data())};
 
 	if (flags.has("slave"))
 	{
+		std::println("starting threads...");
 		std::vector< os::thread > threads;
 		threads.reserve(nthreads);
 		std::chrono::time_point deadline = std::chrono::system_clock::now() + lifetime;
 		while (nthreads-- > 0)
 		{
-			threads.emplace_back(thread_func, deadline);
+			os::thread::priority prior[] = {os::thread::priority::normal,
+						os::thread::priority::idle, os::thread::priority::high};
+			threads.emplace_back(thread_func, deadline)
+					.set_priority(prior[nthreads % std::size(prior)]);
+
 		}
+		std::println("joining threads...");
 		for (os::thread& thread: threads)
 		{
 			thread.join();
@@ -66,14 +83,14 @@ int main(int argc, const char*const* argv)
 	std::vector< std::string > args = {"-s", std::format("--nthreads={}", nthreads),
 				std::format("--lifetime={}", lifetime.count())};
 	os::process proc{os::call_self, args};
-	proc.set_priority(os::process::priority::idle);
+	proc.set_priority(os::process::priority::normal);
 	std::println("child is alive - {}", proc.alive());
 	std::println("child wait got result - {}", proc.wait());
 	std::println("child is alive - {}", proc.alive());
 	std::println("child join got result - {}", proc.join());
 	std::println("{} exited", os::this_process::get_id());
-	for (const auto& keyval : os::this_process::environment())
+	/*for (const auto& keyval : os::this_process::environment())
 	{
 		std::println("\"{}\": \"{}\"", keyval.first, keyval.second);
-	}
+	}*/
 }

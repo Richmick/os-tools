@@ -10,6 +10,12 @@ import std;
 
 export namespace winapi
 {
+	using std::unique_lock;
+	using std::shared_lock;
+
+	struct open_by_name_t
+	{};
+	constexpr inline open_by_name_t open_by_name;
 	class unique_handle;
 	class thread;
 	class process;
@@ -26,6 +32,9 @@ export namespace winapi
 	using security_attributes_t = SECURITY_ATTRIBUTES;
 	using startup_info_t = STARTUPINFO;
 	using process_info_t = PROCESS_INFORMATION;
+	using critical_section_t = CRITICAL_SECTION;
+	using condition_variable_t = CONDITION_VARIABLE;
+	using srw_lock_t = SRWLOCK;
 
 	namespace calls
 	{
@@ -68,6 +77,39 @@ export namespace winapi
 		using ::GetThreadPriority;
 		using ::SetThreadPriority;
 		using ::GetExitCodeThread;
+
+		// Semaphore
+		using ::CreateSemaphoreA;
+		using ::CreateSemaphoreW;
+		using ::CreateSemaphoreExA;
+		using ::CreateSemaphoreExW;
+		using ::OpenSemaphoreA;
+		using ::OpenSemaphoreW;
+		using ::ReleaseSemaphore;
+
+		// Mutex
+		using ::InitializeCriticalSection;
+		using ::InitializeCriticalSectionAndSpinCount;
+		using ::DeleteCriticalSection;
+		using ::EnterCriticalSection;
+		using ::TryEnterCriticalSection;
+		using ::LeaveCriticalSection;
+
+		// Shared mutex
+		using ::InitializeSRWLock;
+		using ::AcquireSRWLockExclusive;
+		using ::AcquireSRWLockShared;
+		using ::TryAcquireSRWLockExclusive;
+		using ::TryAcquireSRWLockShared;
+		using ::ReleaseSRWLockExclusive;
+		using ::ReleaseSRWLockShared;
+
+		// Condition variable
+		using ::InitializeConditionVariable;
+		using ::SleepConditionVariableCS;
+		using ::SleepConditionVariableSRW;
+		using ::WakeAllConditionVariable;
+		using ::WakeConditionVariable;
 
 		// Others
 		using ::GetLastError;

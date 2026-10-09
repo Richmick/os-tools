@@ -13,9 +13,15 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 
 set(cxx_sources
 	"boost-unit-main.cpp"
+	"thread-test.cpp"
 )
 set(cxx_modules)
+add_executable(os-tools-test_child "child-app/main.cpp")
+enable_cxx_modules(os-tools-test_child STANDARD 23 STD_MODULE ON)
+target_link_libraries(os-tools-test_child PRIVATE os-tools::os-tools)
+
 add_executable(os-tools-tests)
+add_dependencies(os-tools-tests os-tools-test_child)
 target_sources(os-tools-tests PRIVATE ${cxx_sources})
 target_sources(${PROJECT_NAME} PRIVATE FILE_SET test_modules TYPE CXX_MODULES FILES ${cxx_modules})
 target_link_libraries(os-tools-tests PRIVATE os-tools::os-tools Boost::boost)

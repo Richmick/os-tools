@@ -1,5 +1,6 @@
 module;
 	#ifdef __linux__
+		#include <cassert>
 		#include <sys/wait.h>
 	#endif
 module os.linapi;
@@ -63,21 +64,13 @@ void linapi::this_process::exit(int code)
 {
 	std::exit(code);
 }
-linapi::process::native_handle_type linapi::this_process::native()
-{
-	return linapi::calls::getpid();
-}
 linapi::process::native_handle_type linapi::this_process::native_handle()
 {
 	return linapi::calls::getpid();
 }
 linapi::process::id linapi::this_process::get_id()
 {
-	return this_process::native();
-}
-linapi::process::native_handle_type linapi::this_process::parent_native()
-{
-	return linapi::calls::getppid();
+	return this_process::native_handle();
 }
 linapi::process::native_handle_type linapi::this_process::parent_native_handle()
 {
@@ -85,11 +78,11 @@ linapi::process::native_handle_type linapi::this_process::parent_native_handle()
 }
 linapi::process::id linapi::this_process::get_parent_id()
 {
-	return this_process::parent_native();
+	return this_process::parent_native_handle();
 }
 linapi::process::priority linapi::this_process::get_priority()
 {
-	int res = linapi::calls::sched_getscheduler(this_process::native());
+	int res = linapi::calls::sched_getscheduler(this_process::native_handle());
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to get process priority");
@@ -98,8 +91,9 @@ linapi::process::priority linapi::this_process::get_priority()
 }
 void linapi::this_process::set_priority(process::priority p)
 {
+	assert(p != process::priority::unset);
 	scheduler_settings_t param{};
-	int res = linapi::calls::sched_setscheduler(this_process::native(), static_cast< int >(p), &param);
+	int res = linapi::calls::sched_setscheduler(this_process::native_handle(), static_cast< int >(p), &param);
 	if (res == -1)
 	{
 		throw linapi::last_error("failed to set process priority");
@@ -172,7 +166,7 @@ linapi::process::process(native_handle_type h) noexcept:
 	native_(h)
 {}
 linapi::process::process(process&& rhs) noexcept:
-	native_(rhs.release())
+	native_(rhs.release_handle())
 {}
 linapi::process::process(call_self_t)
 {
@@ -213,22 +207,18 @@ linapi::process::process(ready_args_t argv)
 linapi::process& linapi::process::operator=(process&& rhs) noexcept
 {
 	if (joinable()) std::terminate();
-	native_ = rhs.release();
+	native_ = rhs.release_handle();
 	return *this;
 }
 linapi::process::~process()
 {
 	if (joinable()) std::terminate();
 }
-linapi::process::native_handle_type linapi::process::native() const noexcept
-{
-	return native_;
-}
 linapi::process::native_handle_type linapi::process::native_handle() const noexcept
 {
 	return native_;
 }
-linapi::process::native_handle_type linapi::process::release()
+linapi::process::native_handle_type linapi::process::release_handle()
 {
 	return std::exchange(native_, {});
 }
@@ -284,7 +274,7 @@ int linapi::process::join()
 	{
 		throw linapi::last_error("failed to join process");
 	}
-	release();
+	release_handle();
 	return WEXITSTATUS(result);
 }
 linapi::process::priority linapi::process::get_priority() const
@@ -298,6 +288,7 @@ linapi::process::priority linapi::process::get_priority() const
 }
 void linapi::process::set_priority(priority p) const
 {
+	assert(p != priority::unset);
 	scheduler_settings_t param{};
 	int res = linapi::calls::sched_setscheduler(native_, static_cast< int >(p), &param);
 	if (res == -1)

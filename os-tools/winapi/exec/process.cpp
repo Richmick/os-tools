@@ -1,3 +1,5 @@
+module;
+	#include <cassert>
 module os.winapi;
 
 #ifdef _WIN32
@@ -88,10 +90,6 @@ void winapi::this_process::exit(int code)
 {
 	winapi::calls::ExitProcess(code);
 }
-winapi::process::native_handle_type winapi::this_process::native()
-{
-	return winapi::calls::GetCurrentProcess();
-}
 winapi::process::native_handle_type winapi::this_process::native_handle()
 {
 	return winapi::calls::GetCurrentProcess();
@@ -102,11 +100,12 @@ winapi::process::id winapi::this_process::get_id()
 }
 winapi::process::priority winapi::this_process::get_priority()
 {
-	return static_cast< process::priority >(winapi::calls::GetPriorityClass(native()));
+	return static_cast< process::priority >(winapi::calls::GetPriorityClass(native_handle()));
 }
 void winapi::this_process::set_priority(process::priority p)
 {
-	if (!winapi::calls::SetPriorityClass(native(), static_cast< dword_t >(p)))
+	assert(p != process::priority::unset);
+	if (!winapi::calls::SetPriorityClass(native_handle(), static_cast< dword_t >(p)))
 	{
 		throw winapi::last_error("failed to set process priority");
 	}
@@ -187,15 +186,11 @@ winapi::process::~process()
 {
 	if (joinable()) std::terminate();
 }
-winapi::process::native_handle_type winapi::process::native() const noexcept
-{
-	return native_.get();
-}
 winapi::process::native_handle_type winapi::process::native_handle() const noexcept
 {
 	return native_.get();
 }
-winapi::handle_t winapi::process::release() noexcept
+winapi::handle_t winapi::process::release_handle() noexcept
 {
 	return native_.release();
 }
@@ -259,6 +254,7 @@ winapi::process::priority winapi::process::get_priority() const
 }
 void winapi::process::set_priority(priority p) const
 {
+	assert(p != priority::unset);
 	if (!winapi::calls::SetPriorityClass(native_.get(), static_cast< dword_t >(p)))
 	{
 		throw winapi::last_error("failed to set process priority");

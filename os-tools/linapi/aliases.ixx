@@ -35,6 +35,7 @@ export namespace linapi
 
 		// Process
 		using ::getpid;
+		using ::setsid;
 		using ::getppid;
 		using ::getenv;
 		using ::setenv;
@@ -83,6 +84,7 @@ export namespace linapi
 		high = SCHED_BATCH,
 		realtime = SCHED_FIFO,
 		greater_realtime = SCHED_RR,
+		unset = -1
 	};
 	enum class signal
 	{

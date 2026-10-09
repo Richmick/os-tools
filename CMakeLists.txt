@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.5
+		VERSION 0.0.6
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )
@@ -38,13 +38,15 @@ set(cxx_sources
 
 	"os-tools/winapi/aliases.cpp"
 	"os-tools/winapi/handle.cpp"
-	"os-tools/winapi/thread.cpp"
-	"os-tools/winapi/process.cpp"
+	"os-tools/winapi/exec/thread.cpp"
+	"os-tools/winapi/exec/process.cpp"
+	"os-tools/winapi/sync/mutex.cpp"
+	"os-tools/winapi/sync/condition_variable.cpp"
 	
 	"os-tools/linapi/aliases.cpp"
 	"os-tools/linapi/handle.cpp"
-	"os-tools/linapi/thread.cpp"
-	"os-tools/linapi/process.cpp"
+	"os-tools/linapi/exec/thread.cpp"
+	"os-tools/linapi/exec/process.cpp"
 )
 set(cxx_modules
 	"os-tools/argv_parser.ixx"
@@ -53,14 +55,17 @@ set(cxx_modules
 	"os-tools/winapi.ixx"
 	"os-tools/winapi/aliases.ixx"
 	"os-tools/winapi/handle.ixx"
-	"os-tools/winapi/thread.ixx"
-	"os-tools/winapi/process.ixx"
+	"os-tools/winapi/exec/thread.ixx"
+	"os-tools/winapi/exec/process.ixx"
+	"os-tools/winapi/sync/semaphore.ixx"
+	"os-tools/winapi/sync/mutex.ixx"
+	"os-tools/winapi/sync/condition_variable.ixx"
 
 	"os-tools/linapi.ixx"
 	"os-tools/linapi/aliases.ixx"
 	"os-tools/linapi/handle.ixx"
-	"os-tools/linapi/thread.ixx"
-	"os-tools/linapi/process.ixx"
+	"os-tools/linapi/exec/thread.ixx"
+	"os-tools/linapi/exec/process.ixx"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})

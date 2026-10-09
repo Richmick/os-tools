@@ -53,9 +53,8 @@ export namespace winapi
 		~process();
 		process& operator=(process&& rhs) noexcept;
 
-		native_handle_type native() const noexcept;
 		native_handle_type native_handle() const noexcept;
-		native_handle_type release() noexcept;
+		native_handle_type release_handle() noexcept;
 		void swap(process& rhs) noexcept;
 
 		id get_id() const;
@@ -81,7 +80,6 @@ export namespace winapi
 	};
 	namespace this_process
 	{
-		process::native_handle_type native();
 		process::native_handle_type native_handle();
 		process::id get_id();
 		std::string executable();
@@ -122,14 +120,14 @@ enum class winapi::process::priority: winapi::dword_t
 	greater = ABOVE_NORMAL_PRIORITY_CLASS,
 	high = HIGH_PRIORITY_CLASS,
 	realtime = REALTIME_PRIORITY_CLASS,
+	unset = static_cast< dword_t >(-1)
 };
 struct winapi::process::initial_params
 {
 	const security_attributes_t* attributes = nullptr;
 	const security_attributes_t* thread_attributes = nullptr;
 	bool inherit_handles = false;
-	priority explicit_priority = priority::normal;
-	bool use_priority = false;
+	process::priority priority = process::priority::unset;
 	bool create_group = false;
 };
 

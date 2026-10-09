@@ -45,9 +45,8 @@ export namespace linapi
 		~process();
 		process& operator=(process&& rhs) noexcept;
 
-		native_handle_type native() const noexcept;
 		native_handle_type native_handle() const noexcept;
-		native_handle_type release();
+		native_handle_type release_handle();
 		void swap(process& rhs) noexcept;
 
 		id get_id() const;
@@ -69,16 +68,14 @@ export namespace linapi
 		static constexpr int wait_only = WNOWAIT;
 		static constexpr int wait_for_exit = WEXITED;
 		native_handle_type native_;
-		static native_handle_type create(const char* app, char*const* console);
 
 		process(ready_args_t argv);
+		static native_handle_type create(const char* app, char*const* console);
 	};
 	namespace this_process
 	{
-		process::native_handle_type native();
 		process::native_handle_type native_handle();
 		process::id get_id();
-		process::native_handle_type parent_native();
 		process::native_handle_type parent_native_handle();
 		process::id get_parent_id();
 		std::string executable();

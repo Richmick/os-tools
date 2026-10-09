@@ -1,3 +1,5 @@
+module;
+	#include <cassert>
 module os.winapi;
 
 #ifdef _WIN32
@@ -7,10 +9,6 @@ import std;
 void winapi::this_thread::exit(int code)
 {
 	winapi::calls::ExitThread(code);
-}
-winapi::thread::native_handle_type winapi::this_thread::native()
-{
-	return winapi::calls::GetCurrentThread();
 }
 winapi::thread::native_handle_type winapi::this_thread::native_handle()
 {
@@ -26,8 +24,8 @@ winapi::process::id winapi::this_thread::get_process_id()
 }
 winapi::thread::priority winapi::this_thread::get_priority()
 {
-	int res = winapi::calls::GetThreadPriority(native());
-	if (res == static_cast< int >(winapi::thread::priority::error))
+	int res = winapi::calls::GetThreadPriority(native_handle());
+	if (res == static_cast< int >(winapi::thread::priority::unset))
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}
@@ -35,7 +33,8 @@ winapi::thread::priority winapi::this_thread::get_priority()
 }
 void winapi::this_thread::set_priority(thread::priority p)
 {
-	if (!winapi::calls::SetThreadPriority(native(), static_cast< int >(p)))
+	assert(p != thread::priority::unset);
+	if (!winapi::calls::SetThreadPriority(native_handle(), static_cast< int >(p)))
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}
@@ -48,7 +47,8 @@ winapi::thread::thread(unique_handle&& h) noexcept:
 	native_(std::move(h))
 {}
 winapi::thread::thread(thread&& rhs) noexcept:
-	native_(std::move(rhs.native_))
+	native_(std::move(rhs.native_)),
+	erasor_(std::exchange(rhs.erasor_, nullptr))
 {}
 winapi::thread::thread(thread_function_t f, void* data)
 {
@@ -67,14 +67,14 @@ winapi::thread::thread(const initial_params& params, thread_function_t f, void* 
 	{
 		throw winapi::last_error("failed to start thread");
 	}
-	if (params.use_priority)
+	if (params.priority != priority::unset)
 	{
-		set_priority(params.explicit_priority);
+		set_priority(params.priority);
 	}
 }
 winapi::thread::thread(const process& proc, thread_function_t f, void* data)
 {
-	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native(), nullptr, 0, f, data, 0, nullptr)};
+	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native_handle(), nullptr, 0, f, data, 0, nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
@@ -83,15 +83,15 @@ winapi::thread::thread(const process& proc, thread_function_t f, void* data)
 winapi::thread::thread(const process& proc, const initial_params& params, thread_function_t f, void* data)
 {
 	security_attributes_t attributes = get_attributes(params);
-	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native(), &attributes, params.stack_size,
+	native_ = unique_handle{winapi::calls::CreateRemoteThread(proc.native_handle(), &attributes, params.stack_size,
 					f, data, get_flags(params), nullptr)};
 	if (!native_)
 	{
 		throw winapi::last_error("failed to start thread");
 	}
-	if (params.use_priority)
+	if (params.priority != priority::unset)
 	{
-		set_priority(params.explicit_priority);
+		set_priority(params.priority);
 	}
 }
 winapi::thread::~thread()
@@ -100,7 +100,8 @@ winapi::thread::~thread()
 }
 winapi::thread& winapi::thread::operator=(thread&& rhs) noexcept
 {
-	if (joinable()) std::terminate();
+	thread dummy{std::move(*this)};
+	erasor_ = std::exchange(rhs.erasor_, nullptr);
 	native_ = std::move(rhs.native_);
 	return *this;
 }
@@ -124,21 +125,23 @@ winapi::dword_t winapi::thread::get_flags(const initial_params& params)
 	return flags;
 }
 
-winapi::handle_t winapi::thread::native() const noexcept
-{
-	return native_.get();
-}
 winapi::handle_t winapi::thread::native_handle() const noexcept
 {
 	return native_.get();
 }
-winapi::unique_handle winapi::thread::release() noexcept
+winapi::unique_handle winapi::thread::release_handle() noexcept
 {
+	if ((erasor_ != nullptr) && erasor_->oneside_released.test_and_set())
+	{
+		delete erasor_;
+	}
+	erasor_ = nullptr;
 	return std::move(native_);
 }
 void winapi::thread::swap(thread& rhs) noexcept
 {
-	native_.swap(rhs.native_);
+	std::swap(native_, rhs.native_);
+	std::swap(erasor_, rhs.erasor_);
 }
 winapi::thread::id winapi::thread::get_id() const
 {
@@ -179,6 +182,8 @@ int winapi::thread::join()
 {
 	int code = wait();
 	native_.reset();
+	delete erasor_;
+	erasor_ = nullptr;
 	return code;
 }
 bool winapi::thread::join(std::chrono::milliseconds dur)
@@ -186,6 +191,8 @@ bool winapi::thread::join(std::chrono::milliseconds dur)
 	if (wait(dur))
 	{
 		native_.reset();
+		delete erasor_;
+		erasor_ = nullptr;
 		return true;
 	}
 	return false;
@@ -193,6 +200,11 @@ bool winapi::thread::join(std::chrono::milliseconds dur)
 void winapi::thread::detach()
 {
 	native_.reset();
+	if ((erasor_ != nullptr) && erasor_->oneside_released.test_and_set())
+	{
+		delete erasor_;
+	}
+	erasor_ = nullptr;
 }
 int winapi::thread::exit_code() const
 {
@@ -217,7 +229,7 @@ void winapi::thread::kill(int exit_code) const
 winapi::thread::priority winapi::thread::get_priority() const
 {
 	int res = winapi::calls::GetThreadPriority(native_.get());
-	if (res == static_cast< int >(priority::error))
+	if (res == static_cast< int >(priority::unset))
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}
@@ -225,6 +237,7 @@ winapi::thread::priority winapi::thread::get_priority() const
 }
 void winapi::thread::set_priority(priority p) const
 {
+	assert(p != priority::unset);
 	if (!winapi::calls::SetThreadPriority(native_.get(), static_cast< int >(p)))
 	{
 		throw winapi::last_error("failed to set thread priority");

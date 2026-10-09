@@ -1,5 +1,7 @@
 export module os;
 
+export import os.argv_parser;
+
 #ifdef _WIN32
 export import os.winapi;
 
@@ -20,6 +22,11 @@ export namespace os
 	{
 		using namespace winapi::this_process;
 	}
+
+	using winapi::counting_semaphore;
+	using winapi::mutex;
+	using winapi::shared_mutex;
+	using winapi::condition_variable;
 }
 #elifdef __linux__
 export import os.linapi;
