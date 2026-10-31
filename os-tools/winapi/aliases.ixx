@@ -12,25 +12,52 @@ export namespace winapi
 {
 	using std::unique_lock;
 	using std::shared_lock;
+	using std::filesystem::path;
 
+	enum class inheritmode: bool
+	{
+		none = false,
+		all = true
+	};
+	enum class openmode
+	{
+		closed, in, out, inout
+	};
+	struct make_empty_t
+	{};
+	constexpr inline make_empty_t make_empty;
 	struct open_by_name_t
 	{};
 	constexpr inline open_by_name_t open_by_name;
+
 	class unique_handle;
 	class thread;
 	class process;
 
 	using handle_t = HANDLE;
+	using int_handle_t = std::size_t;
 	using hinstance_t = HINSTANCE;
 	using hmodule_t = HMODULE;
 	using dword_t = DWORD;
+	using cpuset_info = SYSTEM_CPU_SET_INFORMATION;
+
+	using char_t = wchar_t; ///< Preferable char type for calls
+	using string = std::wstring; ///< Preferable string type for calls
+	using string_view = std::wstring_view; ///< Preferable string type for calls
+	string to_string(handle_t h);
+	string to_string(int_handle_t h);
+	handle_t to_handle(const string& h);
+	handle_t to_handle(const string_view& h);
+	handle_t to_handle(const std::string& h);
+	handle_t to_handle(const std::string_view& h);
 
 	using tchar_t = TCHAR;
 	constexpr inline bool use_ascii = std::is_same_v< tchar_t, char >;
 	using tstring = std::conditional_t< use_ascii, std::string, std::wstring >;
 
 	using security_attributes_t = SECURITY_ATTRIBUTES;
-	using startup_info_t = STARTUPINFO;
+	template< class CharT = char_t >
+	using startup_info_t = std::conditional_t< std::is_same_v< CharT, char >, STARTUPINFOA, STARTUPINFOW >;
 	using process_info_t = PROCESS_INFORMATION;
 	using critical_section_t = CRITICAL_SECTION;
 	using condition_variable_t = CONDITION_VARIABLE;
@@ -111,6 +138,27 @@ export namespace winapi
 		using ::WakeAllConditionVariable;
 		using ::WakeConditionVariable;
 
+		// Files
+		using ::ReadFile;
+		using ::ReadFileEx;
+		using ::WriteFile;
+		using ::WriteFileEx;
+
+		// Pipes
+		using ::CreatePipe;
+
+		// Events
+		using ::CreateEventA;
+		using ::CreateEventW;
+		using ::SetEvent;
+
+		// Signals
+		using ::SetConsoleCtrlHandler;
+		using ::GenerateConsoleCtrlEvent;
+
+		// Numa
+		using ::GetSystemCpuSetInformation;
+
 		// Others
 		using ::GetLastError;
 		using ::WaitForSingleObject;
@@ -119,16 +167,29 @@ export namespace winapi
 	constexpr inline dword_t wait_success_0 = WAIT_OBJECT_0;
 	constexpr inline dword_t wait_timeout = WAIT_TIMEOUT;
 
+	std::error_code last_error_code();
 	std::system_error last_error(const char* msg);
 	std::system_error last_error(const std::string& msg);
+	void throw_on_error(std::error_code err, const char* msg);
+	void throw_on_error(std::error_code err, const std::string& msg);
+	
+	enum class io: dword_t
+	{
+		in = STD_INPUT_HANDLE,
+		out = STD_OUTPUT_HANDLE,
+		err = STD_ERROR_HANDLE
+	};
+
 	void wait(handle_t h);
+	bool wait(handle_t h, std::error_code& err) noexcept;
 	bool wait(handle_t h, std::chrono::milliseconds dur);
+	bool wait(handle_t h, std::chrono::milliseconds dur, std::error_code& err) noexcept;
 
 	template< class CharT >
 	concept char_option = std::is_same_v< CharT, char > || std::is_same_v< CharT, wchar_t >;
 	template< char_option CharT >
 	dword_t create_process_aw(const CharT* executable,
-				startup_info_t& startup_info,
+				startup_info_t< CharT >& startup_info,
 				process_info_t& proc_info,
 				CharT* args = nullptr,
 				security_attributes_t* proc_attr = nullptr,
@@ -142,7 +203,7 @@ export namespace winapi
 }
 
 template< winapi::char_option CharT >
-winapi::dword_t winapi::create_process_aw(const CharT* executable, startup_info_t& startup_info,
+winapi::dword_t winapi::create_process_aw(const CharT* executable, startup_info_t< CharT >& startup_info,
 			process_info_t& proc_info, CharT* args, security_attributes_t* proc_attr,
 			security_attributes_t* thread_attr, bool inherit_handles, dword_t flags,
 			void* env, const CharT* dir)

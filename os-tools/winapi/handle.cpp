@@ -11,6 +11,23 @@ bool winapi::is_blank(handle_t h) noexcept
 {
 	return (h == nullptr) || (h == INVALID_HANDLE_VALUE);
 }
+void winapi::set_inheritance(inheritmode inherit, handle_t h)
+{
+	std::error_code err;
+	set_inheritance(inherit, h, err);
+	throw_on_error(err, "failed to set handle inheritance");
+}
+bool winapi::set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept
+{
+	constexpr dword_t flag = HANDLE_FLAG_INHERIT;
+	if (!winapi::calls::SetHandleInformation(h, flag, (inherit == inheritmode::all ? flag : 0)))
+	{
+		err = winapi::last_error_code();
+		return false;
+	}
+	err.clear();
+	return true;
+}
 
 winapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:
 	native_(rhs.release())

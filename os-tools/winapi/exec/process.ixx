@@ -9,46 +9,98 @@ export module os.winapi:process;
 import std;
 import :aliases;
 import :handle;
+import :signal;
 
 export namespace winapi
 {
-	struct call_self_t
-	{};
-	constexpr inline call_self_t call_self;
 	std::string prepare_cmd_args(const char* app, std::span< const char*const > args);
-	std::string prepare_cmd_args(const std::string& app, std::span< const char*const > args);
-	std::string prepare_cmd_args(const std::string& app, std::span< const std::string > args);
+	std::string prepare_cmd_args(const char* app, std::span< const std::string > args);
 	std::string join_args(std::span< const std::string > data);
 	std::string join_args(std::span< const char*const > data);
 	std::string screen(const std::string& arg);
 	std::string screen(const char* arg);
+
+	std::wstring prepare_cmd_args(const wchar_t* app, std::span< const wchar_t*const > args);
+	std::wstring prepare_cmd_args(const wchar_t* app, std::span< const std::wstring > args);
+	std::wstring join_args(std::span< const std::wstring > data);
+	std::wstring join_args(std::span< const wchar_t*const > data);
+	std::wstring screen(const std::wstring& arg);
+	std::wstring screen(const wchar_t* arg);
 	
 	class process
 	{
 	public:
+		/// Priorities for processes (do not match thread priorities)
 		enum class priority: dword_t;
+		/// Signal type enum
+		using signal = winapi::ipc::signal::type;
+		/// Set of parameters for precise startup within ascii charset
+		struct initial_params_a;
+		/// Set of parameters for precise startup
 		struct initial_params;
+
+		using group_id = dword_t;
+		/// Id type
 		using id = dword_t;
+		/// Os handle type (handle_t, not int_handle_t)
 		using native_handle_type = handle_t;
+		/// Exit code, meaning that process is still alive (can overlap with user codes)
 		static constexpr int still_active = STILL_ACTIVE;
 
 		process() noexcept = default;
-		process(process&& rhs) noexcept;
+		process(process&& rhs) noexcept = default;
 		explicit process(unique_handle&& h) noexcept;
 		explicit process(native_handle_type h) noexcept;
 
-		explicit process(call_self_t);
-		explicit process(call_self_t, std::span< const std::string > args);
-		explicit process(call_self_t, std::span< const char*const > args);
-		explicit process(call_self_t, std::string args); // raw args should include app name
+		explicit process(const path& app);
+		explicit process(const path& app, std::span< const string > args);
+		explicit process(const path& app, std::span< const char_t* const > args);
+		explicit process(const char_t* app);
+		explicit process(const char_t* app, std::span< const string > args);
+		explicit process(const char_t* app, std::span< const char_t* const > args);
 
-		explicit process(const std::string& app, std::span< const std::string > args);
-		explicit process(const char* app, std::span< const std::string > args);
-		explicit process(const char* app, std::span< const char*const > args);
+		explicit process(initial_params& params, const path& app);
+		explicit process(initial_params& params, const path& app, std::span< const string > args);
+		explicit process(initial_params& params, const path& app, std::span< const char_t* const > args);
+		explicit process(initial_params& params, const char_t* app);
+		explicit process(initial_params& params, const char_t* app, std::span< const string > args);
+		explicit process(initial_params& params, const char_t* app, std::span< const char_t* const > args);
 
-		explicit process(const std::string& app, std::string args);
-		explicit process(std::span< const char*const > cl_cmd);
-		explicit process(std::string cl_cmd);
+		explicit process(const path& app, std::error_code& err);
+		explicit process(const path& app, std::span< const string > args, std::error_code& err);
+		explicit process(const path& app, std::span< const char_t* const > args, std::error_code& err);
+		explicit process(const char_t* app, std::error_code& err);
+		explicit process(const char_t* app, std::span< const string > args, std::error_code& err);
+		explicit process(const char_t* app, std::span< const char_t* const > args, std::error_code& err);
+
+		explicit process(initial_params& params, const path& app, std::error_code& err);
+		explicit process(initial_params& params, const path& app, std::span< const string > args,
+					std::error_code& err);
+		explicit process(initial_params& params, const path& app, std::span< const char_t* const > args,
+					std::error_code& err);
+		explicit process(initial_params& params, const char_t* app, std::error_code& err);
+		explicit process(initial_params& params, const char_t* app, std::span< const string > args,
+					std::error_code& err);
+		explicit process(initial_params& params, const char_t* app, std::span< const char_t* const > args,
+					std::error_code& err);
+
+		// Winapi specific (executable can be obtained by executable_aw< char >()):
+		explicit process(const char* app, std::span< const std::string > args, std::error_code& err);
+		explicit process(const char* app, std::span< const char* const > args, std::error_code& err);
+		explicit process(initial_params& params, const char* app, std::span< const std::string > args,
+					std::error_code& err);
+		explicit process(initial_params& params, const char* app, std::span< const char* const > args,
+					std::error_code& err);
+
+		explicit process(const std::wstring& app, std::wstring args, std::error_code& err);
+		explicit process(std::wstring cl_cmd, std::error_code& err);
+		explicit process(initial_params& params, const std::wstring& app, std::wstring args, std::error_code& err);
+		explicit process(initial_params& params, std::wstring cl_cmd, std::error_code& err);
+
+		explicit process(const std::string& app, std::string args, std::error_code& err);
+		explicit process(std::string cl_cmd, std::error_code& err);
+		explicit process(initial_params& params, const std::string& app, std::string args, std::error_code& err);
+		explicit process(initial_params& params, std::string cl_cmd, std::error_code& err);
 
 		~process();
 		process& operator=(process&& rhs) noexcept;
@@ -75,21 +127,37 @@ export namespace winapi
 		void kill(int exit_code);
 
 	private:
+		static constexpr inline dword_t create_new_group = CREATE_NEW_PROCESS_GROUP;
+		static constexpr inline dword_t use_provided_handles = STARTF_USESTDHANDLES;
 		unique_handle native_;
-		static unique_handle create(const char* app, char* console);
+
+		static unique_handle create(const char* app, char* console, std::error_code& err);
+		static unique_handle create(const wchar_t* app, wchar_t* console, std::error_code& err);
+		static unique_handle create(initial_params& params, const char* app, char* console, std::error_code& err);
+		static unique_handle create(initial_params& params, const wchar_t* app, wchar_t* console, std::error_code& err);
 	};
 	namespace this_process
 	{
 		process::native_handle_type native_handle();
 		process::id get_id();
-		std::string executable();
+		path executable();
 		std::optional< std::string > get_env(const std::string& name);
 		void set_env(const std::string& name, const std::string& value);
 		void delete_env(const std::string& name);
 		std::unordered_map< std::string, std::string > environment();
-		[[noreturn]] void exit(int code);
 		process::priority get_priority();
 		void set_priority(process::priority p);
+
+		[[noreturn]] void _exit(int code);
+
+		handle_t stdin();
+		handle_t stdout();
+		handle_t stderr();
+		handle_t stdin(std::error_code& err) noexcept;
+		handle_t stdout(std::error_code& err) noexcept;
+		handle_t stderr(std::error_code& err) noexcept;
+		handle_t std_handle(io type);
+		handle_t std_handle(io type, std::error_code& err) noexcept;
 
 		template< char_option CharT = tchar_t, class Traits = std::char_traits< CharT > >
 		std::basic_string< CharT, Traits > executable_aw();
@@ -124,11 +192,20 @@ enum class winapi::process::priority: winapi::dword_t
 };
 struct winapi::process::initial_params
 {
-	const security_attributes_t* attributes = nullptr;
-	const security_attributes_t* thread_attributes = nullptr;
-	bool inherit_handles = false;
-	process::priority priority = process::priority::unset;
+	void* process_security_descriptor = nullptr;
+	void* thread_security_descriptor = nullptr;
+	inheritmode inherit_process_handle = inheritmode::none;
+	inheritmode inherit_thread_handle = inheritmode::none;
+
+	inheritmode inherit_handles = inheritmode::none;
 	bool create_group = false;
+	dword_t flags = 0;
+	process::priority priority = process::priority::unset;
+
+	startup_info_t< wchar_t > startup_info{.cb = sizeof(startup_info_t< wchar_t >)}; // can be modified
+	handle_t stdin = nullptr;
+	handle_t stdout = nullptr;
+	handle_t stderr = nullptr;
 };
 
 

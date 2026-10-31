@@ -5,88 +5,8 @@ module os.winapi;
 #ifdef _WIN32
 import std;
 
-std::string winapi::prepare_cmd_args(const char* app, std::span< const char*const > args)
-{
-	std::string cmd = "\"";
-	cmd += app;
-	cmd += '"';
-	if (args.size() != 0)
-	{
-		cmd += ' ';
-		cmd += join_args(args);
-	}
-	return cmd;
-}
-std::string winapi::prepare_cmd_args(const std::string& app, std::span< const char*const > args)
-{
-	std::string cmd = '"' + app + '"';
-	if (args.size() != 0)
-	{
-		cmd += ' ';
-		cmd += join_args(args);
-	}
-	return cmd;
-}
-std::string winapi::prepare_cmd_args(const std::string& app, std::span< const std::string > args)
-{
-	std::string cmd = '"' + app + '"';
-	if (args.size() != 0)
-	{
-		cmd += ' ';
-		cmd += join_args(args);
-	}
-	return cmd;
-}
-std::string winapi::join_args(std::span< const std::string > data)
-{
-	std::string result;
-	for (const std::string& arg: data)
-	{
-		if (!result.empty()) result += ' ';
-		result += screen(arg);
-	}
-	return result;
-}
-std::string winapi::join_args(std::span< const char* const > data)
-{
-	std::string result;
-	for (const char* arg: data)
-	{
-		if (!result.empty()) result += ' ';
-		result += screen(arg);
-	}
-	return result;
-}
-std::string winapi::screen(const std::string& arg)
-{
-	return screen(arg.c_str());
-}
-std::string winapi::screen(const char* arg)
-{
-	if (arg == nullptr) return {};
-	std::string result = "\"";
-	for (; *arg != '\0'; arg++)
-	{
-		if (*arg == '"') result += "\\\"";
-		else if (*arg == '\\') result += "\\\\";
-		else result += *arg;
-	}
-	return result += '"';
-}
-winapi::unique_handle winapi::process::create(const char* app, char* console)
-{
-	startup_info_t startup{.cb = sizeof(startup_info_t)};
-	process_info_t result;
-	if (!create_process_aw(app, startup, result, console))
-	{
-		throw winapi::last_error("failed to start process (called self)");
-	}
-	unique_handle thread_handle{result.hThread};
-	return unique_handle{result.hProcess};
-}
-
 [[noreturn]]
-void winapi::this_process::exit(int code)
+void winapi::this_process::_exit(int code)
 {
 	winapi::calls::ExitProcess(code);
 }
@@ -110,9 +30,9 @@ void winapi::this_process::set_priority(process::priority p)
 		throw winapi::last_error("failed to set process priority");
 	}
 }
-std::string winapi::this_process::executable()
+winapi::path winapi::this_process::executable()
 {
-	return executable_aw< char >();
+	return executable_aw< path::value_type >();
 }
 std::optional< std::string > winapi::this_process::get_env(const std::string& name)
 {
@@ -130,61 +50,54 @@ std::unordered_map< std::string, std::string> winapi::this_process::environment(
 {
 	return environment_aw< char >();
 }
+winapi::handle_t winapi::this_process::stdin()
+{
+	return std_handle(io::in);
+}
+winapi::handle_t winapi::this_process::stdout()
+{
+	return std_handle(io::out);
+}
+winapi::handle_t winapi::this_process::stderr()
+{
+	return std_handle(io::err);
+}
+winapi::handle_t winapi::this_process::stdin(std::error_code& err) noexcept
+{
+	return std_handle(io::in, err);
+}
+winapi::handle_t winapi::this_process::stdout(std::error_code& err) noexcept
+{
+	return std_handle(io::out, err);
+}
+winapi::handle_t winapi::this_process::stderr(std::error_code& err) noexcept
+{
+	return std_handle(io::err, err);
+}
+winapi::handle_t winapi::this_process::std_handle(io type)
+{
+	std::error_code err;
+	handle_t res = std_handle(type, err);
+	throw_on_error(err, "failed to get std handle");
+	return res;
+}
+winapi::handle_t winapi::this_process::std_handle(io type, std::error_code& err) noexcept
+{
+	handle_t res = winapi::calls::GetStdHandle(static_cast< dword_t >(type));
+	if (winapi::is_blank(res)) err = winapi::last_error_code();
+	else err.clear();
+	return res;
+}
 
-winapi::process::process(unique_handle&& h) noexcept:
-	native_(std::move(h))
-{}
-winapi::process::process(native_handle_type h) noexcept:
-	native_(h)
-{}
-winapi::process::process(process&& rhs) noexcept:
-	native_(std::move(rhs.native_))
-{}
-winapi::process::process(call_self_t)
+winapi::process::~process()
 {
-	std::string executable = winapi::this_process::executable();
-	native_ = create(executable.data(), nullptr);
-}
-winapi::process::process(call_self_t, std::span< const char*const > args):
-	process(prepare_cmd_args(this_process::executable(), args))
-{}
-winapi::process::process(call_self_t, std::span< const std::string > args):
-	process(prepare_cmd_args(this_process::executable(), args))
-{}
-winapi::process::process(call_self_t, std::string args)
-{
-	std::string executable = winapi::this_process::executable();
-	native_ = create(executable.data(), args.data());
-}
-winapi::process::process(const std::string& app, std::span< const std::string > args):
-	process(prepare_cmd_args(app, args))
-{}
-winapi::process::process(const char* app, std::span< const std::string > args):
-	process(prepare_cmd_args(app, args))
-{}
-winapi::process::process(const char* app, std::span< const char*const > args):
-	process(prepare_cmd_args(app, args))
-{}
-winapi::process::process(const std::string& app, std::string args)
-{
-	native_ = create(app.data(), args.data());
-}
-winapi::process::process(std::span< const char*const > cl_cmd):
-	process(join_args(cl_cmd))
-{}
-winapi::process::process(std::string cl_cmd)
-{
-	native_ = create(nullptr, cl_cmd.data());
+	if (joinable()) std::terminate();
 }
 winapi::process& winapi::process::operator=(process&& rhs) noexcept
 {
 	if (joinable()) std::terminate();
 	native_ = std::move(rhs.native_);
 	return *this;
-}
-winapi::process::~process()
-{
-	if (joinable()) std::terminate();
 }
 winapi::process::native_handle_type winapi::process::native_handle() const noexcept
 {

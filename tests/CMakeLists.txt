@@ -14,6 +14,8 @@ find_package(Boost REQUIRED COMPONENTS unit_test_framework)
 set(cxx_sources
 	"boost-unit-main.cpp"
 	"thread-test.cpp"
+	"process-test.cpp"
+	"pipe-test.cpp"
 )
 set(cxx_modules)
 add_executable(os-tools-test_child "child-app/main.cpp")

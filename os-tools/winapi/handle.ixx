@@ -1,20 +1,18 @@
 export module os.winapi:handle;
 
-import std;
-
 #ifdef _WIN32
+import std;
 import :aliases;
-#endif
 
-namespace winapi
+export namespace winapi
 {
-	export class unique_handle;
-	export template< class CharT, class Traits >
+	class unique_handle;
+	template< class CharT, class Traits >
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const winapi::unique_handle& rhs);
-#ifdef _WIN32
-	export bool is_blank(handle_t h) noexcept;
-#endif
+	bool is_blank(handle_t h) noexcept;
+	void set_inheritance(inheritmode inherit, handle_t h);
+	bool set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept;
 }
 namespace std
 {
@@ -22,8 +20,6 @@ namespace std
 	struct hash< winapi::unique_handle >;
 	export void swap(winapi::unique_handle& lhs, winapi::unique_handle& rhs) noexcept;
 }
-
-#ifdef _WIN32
 
 class winapi::unique_handle
 {
@@ -68,5 +64,4 @@ std::basic_ostream< CharT,Traits >& winapi::operator<<(std::basic_ostream< CharT
 {
 	return out << rhs.get();
 }
-
 #endif

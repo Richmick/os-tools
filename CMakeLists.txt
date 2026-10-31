@@ -40,13 +40,22 @@ set(cxx_sources
 	"os-tools/winapi/handle.cpp"
 	"os-tools/winapi/exec/thread.cpp"
 	"os-tools/winapi/exec/process.cpp"
+	"os-tools/winapi/exec/process_ctors.cpp"
+	"os-tools/winapi/exec/process_subcalls.cpp"
 	"os-tools/winapi/sync/mutex.cpp"
 	"os-tools/winapi/sync/condition_variable.cpp"
+	"os-tools/winapi/ipc/pipe.cpp"
+	"os-tools/winapi/ipc/signal.cpp"
+	"os-tools/winapi/ipc/event.cpp"
+	"os-tools/winapi/numa/nodes.cpp"
 	
 	"os-tools/linapi/aliases.cpp"
 	"os-tools/linapi/handle.cpp"
 	"os-tools/linapi/exec/thread.cpp"
 	"os-tools/linapi/exec/process.cpp"
+)
+set(cxx_headers
+	"os-tools/os_macro.hpp"
 )
 set(cxx_modules
 	"os-tools/argv_parser.ixx"
@@ -60,6 +69,10 @@ set(cxx_modules
 	"os-tools/winapi/sync/semaphore.ixx"
 	"os-tools/winapi/sync/mutex.ixx"
 	"os-tools/winapi/sync/condition_variable.ixx"
+	"os-tools/winapi/ipc/pipe.ixx"
+	"os-tools/winapi/ipc/signal.ixx"
+	"os-tools/winapi/ipc/event.ixx"
+	"os-tools/winapi/numa/nodes.ixx"
 
 	"os-tools/linapi.ixx"
 	"os-tools/linapi/aliases.ixx"
@@ -69,10 +82,16 @@ set(cxx_modules
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})
+target_sources(${PROJECT_NAME} PUBLIC FILE_SET os_tools_headers TYPE HEADERS FILES ${cxx_headers})
 target_sources(${PROJECT_NAME} PUBLIC FILE_SET os_tools_modules TYPE CXX_MODULES FILES ${cxx_modules})
+target_include_directories(${PROJECT_NAME} PUBLIC
+	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/os-tools>
+	$<INSTALL_INTERFACE:${INSTALL_OS_TOOLS_INCLUDE_DIR}>
+)
 
 source_group("Sources" FILES ${cxx_sources})
 source_group("Interfaces" FILES ${cxx_modules})
+source_group("Headers" FILES ${cxx_headers})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
 	SOVERSION ${PROJECT_VERSION_MAJOR}
@@ -105,6 +124,7 @@ if (OS_TOOLS_INSTALL AND NOT CMAKE_SKIP_INSTALL_RULES)
 		ARCHIVE DESTINATION "${INSTALL_OS_TOOLS_LIB_DIR}" COMPONENT lib
 		LIBRARY DESTINATION "${INSTALL_OS_TOOLS_LIB_DIR}" COMPONENT lib
 		FILE_SET os_tools_modules DESTINATION "${INSTALL_OS_TOOLS_INCLUDE_DIR}" COMPONENT lib
+		FILE_SET os_tools_headers DESTINATION "${INSTALL_OS_TOOLS_INCLUDE_DIR}" COMPONENT lib
 	)
 	set(targets_file "os-tools-targets.cmake")
 	install(EXPORT os_tools_targets
