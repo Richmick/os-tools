@@ -16,6 +16,7 @@ set(cxx_sources
 	"thread-test.cpp"
 	"process-test.cpp"
 	"pipe-test.cpp"
+	"numa-test.cpp"
 )
 set(cxx_modules)
 add_executable(os-tools-test_child "child-app/main.cpp")

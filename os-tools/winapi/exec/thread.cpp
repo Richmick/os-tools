@@ -39,6 +39,33 @@ void winapi::this_thread::set_priority(thread::priority p)
 		throw winapi::last_error("failed to set thread priority");
 	}
 }
+winapi::numa::processor winapi::this_thread::get_ideal_processor()
+{
+	std::error_code err;
+	numa::processor res = get_ideal_processor(err);
+	throw_on_error(err, "failed to obtain thread ideal processor");
+	return res;
+}
+winapi::numa::processor winapi::this_thread::get_ideal_processor(std::error_code& err) noexcept
+{
+	processor_number res;
+	process_error(GetThreadIdealProcessorEx(native_handle(), &res), err);
+	return res;
+}
+winapi::numa::processor winapi::this_thread::set_ideal_processor(numa::processor new_proc)
+{
+	std::error_code err;
+	numa::processor old_proc = set_ideal_processor(new_proc, err);
+	throw_on_error(err, "failed to set thread ideal processor");
+	return old_proc;
+}
+winapi::numa::processor winapi::this_thread::set_ideal_processor(numa::processor new_processor,
+			std::error_code& err) noexcept
+{
+	processor_number old_proc, new_proc = new_processor;
+	process_error(SetThreadIdealProcessorEx(native_handle(), &new_proc, &old_proc), err);
+	return old_proc;
+}
 
 winapi::thread::thread(native_handle_type h) noexcept:
 	native_(h)
@@ -242,6 +269,33 @@ void winapi::thread::set_priority(priority p) const
 	{
 		throw winapi::last_error("failed to set thread priority");
 	}
+}
+winapi::numa::processor winapi::thread::get_ideal_processor() const
+{
+	std::error_code err;
+	numa::processor res = get_ideal_processor(err);
+	throw_on_error(err, "failed to obtain thread ideal processor");
+	return res;
+}
+winapi::numa::processor winapi::thread::get_ideal_processor(std::error_code& err) const noexcept
+{
+	processor_number res;
+	process_error(GetThreadIdealProcessorEx(native_handle(), &res), err);
+	return res;
+}
+winapi::numa::processor winapi::thread::set_ideal_processor(numa::processor new_proc) const
+{
+	std::error_code err;
+	numa::processor old_proc = set_ideal_processor(new_proc, err);
+	throw_on_error(err, "failed to set thread ideal processor");
+	return old_proc;
+}
+winapi::numa::processor winapi::thread::set_ideal_processor(numa::processor new_processor,
+			std::error_code& err) const noexcept
+{
+	processor_number old_proc, new_proc = new_processor;
+	process_error(SetThreadIdealProcessorEx(native_handle(), &new_proc, &old_proc), err);
+	return old_proc;
 }
 
 void std::swap(winapi::thread& lhs, winapi::thread& rhs) noexcept

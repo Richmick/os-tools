@@ -40,6 +40,8 @@ export namespace winapi
 	using hmodule_t = HMODULE;
 	using dword_t = DWORD;
 	using cpuset_info = SYSTEM_CPU_SET_INFORMATION;
+	using cpuset_info_type = CPU_SET_INFORMATION_TYPE;
+	using processor_number = PROCESSOR_NUMBER;
 
 	using char_t = wchar_t; ///< Preferable char type for calls
 	using string = std::wstring; ///< Preferable string type for calls
@@ -62,6 +64,23 @@ export namespace winapi
 	using critical_section_t = CRITICAL_SECTION;
 	using condition_variable_t = CONDITION_VARIABLE;
 	using srw_lock_t = SRWLOCK;
+
+	struct clock
+	{
+		using rep = std::int64_t;
+		using period = std::ratio< 1, 10'000'000 >;
+		using duration = std::chrono::duration< rep, period >;
+		using time_point = std::chrono::time_point< clock >;
+
+		static constexpr inline bool is_steady = true;
+	};
+	using sys_time = clock::time_point;
+	using sys_duration = clock::duration;
+	struct times
+	{
+		sys_duration user, kernel, idle;
+		sys_duration real() const noexcept;
+	};
 
 	namespace calls
 	{
@@ -103,6 +122,8 @@ export namespace winapi
 		using ::GetThreadId;
 		using ::GetThreadPriority;
 		using ::SetThreadPriority;
+		using ::SetThreadIdealProcessorEx;
+		using ::GetThreadIdealProcessorEx;
 		using ::GetExitCodeThread;
 
 		// Semaphore
@@ -157,7 +178,14 @@ export namespace winapi
 		using ::GenerateConsoleCtrlEvent;
 
 		// Numa
+		using ::GetCurrentProcessorNumberEx;
 		using ::GetSystemCpuSetInformation;
+		using ::GetNumaProcessorNode;
+		using ::GetNumaProcessorNodeEx;
+		using ::GetActiveProcessorCount;
+		using ::GetActiveProcessorGroupCount;
+		using ::GetMaximumProcessorCount;
+		using ::GetMaximumProcessorGroupCount;
 
 		// Others
 		using ::GetLastError;
@@ -172,6 +200,8 @@ export namespace winapi
 	std::system_error last_error(const std::string& msg);
 	void throw_on_error(std::error_code err, const char* msg);
 	void throw_on_error(std::error_code err, const std::string& msg);
+	void process_error(bool success, std::error_code& err) noexcept;
+	handle_t process_error(handle_t res, std::error_code& err) noexcept;
 	
 	enum class io: dword_t
 	{

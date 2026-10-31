@@ -28,6 +28,11 @@ winapi::handle_t winapi::to_handle(const std::string_view& h)
 	return to_handle(std::string{h});
 }
 
+winapi::sys_duration winapi::times::real() const noexcept
+{
+	return user + kernel + idle;
+}
+
 std::error_code winapi::last_error_code()
 {
 	return std::error_code{static_cast< int >(winapi::calls::GetLastError()), std::system_category()};
@@ -47,6 +52,17 @@ void winapi::throw_on_error(std::error_code err, const char* msg)
 void winapi::throw_on_error(std::error_code err, const std::string& msg)
 {
 	if (err) throw std::system_error(err, msg);
+}
+void winapi::process_error(bool success, std::error_code& err) noexcept
+{
+	if (success) err.clear();
+	else err = last_error_code();
+}
+winapi::handle_t winapi::process_error(handle_t res, std::error_code& err) noexcept
+{
+	if (!winapi::is_blank(res)) err.clear();
+	else err = last_error_code();
+	return res;
 }
 
 void winapi::wait(handle_t h)

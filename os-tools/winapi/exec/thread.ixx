@@ -11,6 +11,7 @@ import std;
 import :aliases;
 import :handle;
 import :process;
+import :numa_nodes;
 
 export namespace winapi
 {
@@ -65,6 +66,10 @@ export namespace winapi
 
 		priority get_priority() const;
 		void set_priority(priority p) const;
+		numa::processor get_ideal_processor() const;
+		numa::processor get_ideal_processor(std::error_code& err) const noexcept;
+		numa::processor set_ideal_processor(numa::processor new_processor) const;
+		numa::processor set_ideal_processor(numa::processor new_processor, std::error_code& err) const noexcept;
 	private:
 		struct data_erasor;
 		template< class F, class... Args >
@@ -94,6 +99,10 @@ export namespace winapi
 		[[noreturn]] void exit(int code);
 		thread::priority get_priority();
 		void set_priority(thread::priority p);
+		numa::processor get_ideal_processor();
+		numa::processor get_ideal_processor(std::error_code& err) noexcept;
+		numa::processor set_ideal_processor(numa::processor new_processor);
+		numa::processor set_ideal_processor(numa::processor new_processor, std::error_code& err) noexcept;
 	}
 }
 namespace std

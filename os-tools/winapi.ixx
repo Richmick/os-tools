@@ -18,4 +18,4 @@ export import :signal;
 export import :event;
 
 // Numa
-export import :nodes;
+export import :numa_nodes;

@@ -45,6 +45,8 @@ export namespace os
 		using __OS_NAMESPACE::this_thread::get_process_id;
 		using __OS_NAMESPACE::this_thread::get_priority;
 		using __OS_NAMESPACE::this_thread::set_priority;
+		using __OS_NAMESPACE::this_thread::get_ideal_processor;
+		using __OS_NAMESPACE::this_thread::set_ideal_processor;
 	}
 	namespace this_process
 	{
@@ -77,6 +79,10 @@ export namespace os
 	}
 	namespace numa
 	{
+		using __OS_NAMESPACE::numa::node;
+		using __OS_NAMESPACE::numa::processor;
+		using __OS_NAMESPACE::numa::cpu_set;
+		using __OS_NAMESPACE::numa::cpu_set_info;
 	}
 
 	using __OS_NAMESPACE::counting_semaphore;
