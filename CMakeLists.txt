@@ -53,6 +53,10 @@ set(cxx_sources
 	"os-tools/linapi/handle.cpp"
 	"os-tools/linapi/exec/thread.cpp"
 	"os-tools/linapi/exec/process.cpp"
+	"os-tools/linapi/exec/process_ctors.cpp"
+	"os-tools/linapi/exec/process_subcalls.cpp"
+	"os-tools/linapi/ipc/signal.cpp"
+	"os-tools/linapi/ipc/event.cpp"
 )
 set(cxx_headers
 	"os-tools/os_macro.hpp"
@@ -79,6 +83,8 @@ set(cxx_modules
 	"os-tools/linapi/handle.ixx"
 	"os-tools/linapi/exec/thread.ixx"
 	"os-tools/linapi/exec/process.ixx"
+	"os-tools/linapi/ipc/signal.ixx"
+	"os-tools/linapi/ipc/event.ixx"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})

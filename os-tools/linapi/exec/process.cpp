@@ -8,59 +8,8 @@ module os.linapi;
 #ifdef __linux__
 import std;
 
-linapi::ready_args_t linapi::prepare_cmd_args(const char* app, std::span< const char*const > args)
-{
-	ready_args_t result;
-	result.first.reserve(args.size() + 1);
-	result.second.reserve(args.size() + 1);
-	result.second.emplace_back(result.first.emplace_back(app).data());
-	for (const char* arg: args)
-	{
-		result.second.emplace_back(result.first.emplace_back(arg).data());
-	}
-	return result;
-}
-linapi::ready_args_t linapi::prepare_cmd_args(const std::string& app, std::span< const char*const > args)
-{
-	ready_args_t result;
-	result.first.reserve(args.size() + 1);
-	result.second.reserve(args.size() + 1);
-	result.second.emplace_back(result.first.emplace_back(app.c_str()).data());
-	for (const char* arg: args)
-	{
-		result.second.emplace_back(result.first.emplace_back(arg).data());
-	}
-	return result;
-}
-linapi::ready_args_t linapi::prepare_cmd_args(const std::string& app, std::span< const std::string > args)
-{
-	ready_args_t result;
-	result.first.reserve(args.size() + 1);
-	result.second.reserve(args.size() + 1);
-	result.second.emplace_back(result.first.emplace_back(app.c_str()).data());
-	for (const std::string& arg: args)
-	{
-		result.second.emplace_back(result.first.emplace_back(arg.c_str()).data());
-	}
-	return result;
-}
-linapi::process::native_handle_type linapi::process::create(const char* app, char*const* argv)
-{
-	process_handle_t h = linapi::calls::vfork();
-	if (h == 0)
-	{
-		linapi::calls::execv(app, argv);
-		linapi::calls::_exit(-1);
-	}
-	else if (h == -1)
-	{
-		throw linapi::last_error("failed to vfork process");
-	}
-	return h;
-}
-
 [[noreturn]]
-void linapi::this_process::exit(int code)
+void linapi::this_process::_exit(int code)
 {
 	std::exit(code);
 }
@@ -71,6 +20,10 @@ linapi::process::native_handle_type linapi::this_process::native_handle()
 linapi::process::id linapi::this_process::get_id()
 {
 	return this_process::native_handle();
+}
+linapi::process::group_id linapi::this_process::get_group_id()
+{
+	return getpgid(0);
 }
 linapi::process::native_handle_type linapi::this_process::parent_native_handle()
 {
@@ -99,7 +52,15 @@ void linapi::this_process::set_priority(process::priority p)
 		throw linapi::last_error("failed to set process priority");
 	}
 }
-std::string linapi::this_process::executable()
+void linapi::this_process::signal(ipc::signal::type type)
+{
+	if (linapi::calls::kill(native_handle(), static_cast< int >(type)) != 0)
+	{
+		throw linapi::last_error("failed to signal to process");
+	}
+}
+
+linapi::path linapi::this_process::executable()
 {
 	const char* symlink = "/proc/self/exe";
 	constexpr std::size_t length = 256;
@@ -109,7 +70,7 @@ std::string linapi::this_process::executable()
 		std::ptrdiff_t res_len = linapi::calls::readlink(symlink, buf, length);
 		if (res_len < 0) throw linapi::last_error("failed to retrieve executable");
 		buf[res_len] = '\0';
-		if (res_len < length) return {buf, static_cast< std::size_t >(res_len)};
+		if (res_len < length) return {string{buf, static_cast< std::size_t >(res_len)}};
 	}
 	std::string buf;
 	buf.reserve(length * 2);
@@ -121,7 +82,7 @@ std::string linapi::this_process::executable()
 		res_len = linapi::calls::readlink(symlink, buf.data(), buf.size());
 	}
 	if (res_len == 0) throw linapi::last_error("failed to retrieve executable");
-	return {buf, static_cast< std::size_t >(res_len)};
+	return {string{buf.data(), static_cast< std::size_t >(res_len)}};
 }
 std::optional< std::string > linapi::this_process::get_env(const std::string& name)
 {
@@ -162,57 +123,48 @@ std::unordered_map< std::string, std::string > linapi::this_process::environment
 	return result;
 }
 
-linapi::process::process(native_handle_type h) noexcept:
-	native_(h)
-{}
-linapi::process::process(process&& rhs) noexcept:
-	native_(rhs.release_handle())
-{}
-linapi::process::process(call_self_t)
+linapi::handle_t linapi::this_process::stdin() noexcept
 {
-	std::string app = this_process::executable();
-	char*const argv[] = {app.data(), nullptr};
-	native_ = create(app.data(), argv);
+	return std_handle(io::in);
 }
-linapi::process::process(call_self_t, std::span< const char*const > args):
-	process(prepare_cmd_args(this_process::executable(), args))
-{}
-linapi::process::process(call_self_t, std::span< const std::string > args):
-	process(prepare_cmd_args(this_process::executable(), args))
-{}
-linapi::process::process(call_self_t, char*const* args)
+linapi::handle_t linapi::this_process::stdout() noexcept
 {
-	std::string app = this_process::executable();
-	native_ = create(app.data(), args);
+	return std_handle(io::out);
 }
-linapi::process::process(const std::string& app, std::span< const std::string > args):
-	process(prepare_cmd_args(app, args))
-{}
-linapi::process::process(const char* app, std::span< const std::string > args):
-	process(prepare_cmd_args(app, args))
-{}
-linapi::process::process(const char* app, std::span< const char*const > args):
-	process(prepare_cmd_args(app, args))
-{}
-linapi::process::process(const char* app, char*const* args)
+linapi::handle_t linapi::this_process::stderr() noexcept
 {
-	native_ = create(app, args);
+	return std_handle(io::err);
 }
-linapi::process::process(ready_args_t argv)
+linapi::handle_t linapi::this_process::stdin(std::error_code& err) noexcept
 {
-	std::string app = argv.first.front();
-	native_ = create(app.data(), argv.second.data());
+	return std_handle(io::in, err);
+}
+linapi::handle_t linapi::this_process::stdout(std::error_code& err) noexcept
+{
+	return std_handle(io::out, err);
+}
+linapi::handle_t linapi::this_process::stderr(std::error_code& err) noexcept
+{
+	return std_handle(io::err, err);
+}
+linapi::handle_t linapi::this_process::std_handle(io type) noexcept
+{
+	return static_cast< handle_t >(type);
+}
+linapi::handle_t linapi::this_process::std_handle(io type, std::error_code& err) noexcept
+{
+	return static_cast< handle_t >(type);
 }
 
+linapi::process::~process()
+{
+	if (joinable()) std::terminate();
+}
 linapi::process& linapi::process::operator=(process&& rhs) noexcept
 {
 	if (joinable()) std::terminate();
 	native_ = rhs.release_handle();
 	return *this;
-}
-linapi::process::~process()
-{
-	if (joinable()) std::terminate();
 }
 linapi::process::native_handle_type linapi::process::native_handle() const noexcept
 {
@@ -229,6 +181,10 @@ void linapi::process::swap(process& rhs) noexcept
 linapi::process::id linapi::process::get_id() const
 {
 	return native_;
+}
+linapi::process::group_id linapi::process::get_group_id() const
+{
+	return getpgid(native_);
 }
 bool linapi::process::joinable() const noexcept
 {
@@ -309,12 +265,20 @@ int linapi::process::exit_code() const
 	}
 	return static_cast< int >(result.si_status);
 }
+void linapi::process::signal(ipc::signal::type type)
+{
+	if (linapi::calls::kill(native_handle(), static_cast< int >(type)) != 0)
+	{
+		throw linapi::last_error("failed to signal to process");
+	}
+}
+void linapi::process::terminate()
+{
+	signal(ipc::signal::terminate);
+}
 void linapi::process::kill()
 {
-	if (linapi::calls::kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
-	{
-		throw linapi::last_error("failed to kill process");
-	}
+	signal(ipc::signal::kill);
 }
 
 void std::swap(linapi::process& lhs, linapi::process& rhs) noexcept

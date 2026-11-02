@@ -45,8 +45,8 @@ export namespace os
 		using __OS_NAMESPACE::this_thread::get_process_id;
 		using __OS_NAMESPACE::this_thread::get_priority;
 		using __OS_NAMESPACE::this_thread::set_priority;
-		using __OS_NAMESPACE::this_thread::get_ideal_processor;
-		using __OS_NAMESPACE::this_thread::set_ideal_processor;
+		//using __OS_NAMESPACE::this_thread::get_ideal_processor;
+		//using __OS_NAMESPACE::this_thread::set_ideal_processor;
 	}
 	namespace this_process
 	{
@@ -70,23 +70,23 @@ export namespace os
 		namespace signal
 		{
 			using __OS_NAMESPACE::ipc::signal::type;
-			using __OS_NAMESPACE::ipc::signal::sigint;
-			using __OS_NAMESPACE::ipc::signal::sigkill;
+			using __OS_NAMESPACE::ipc::signal::interrupt;
+			using __OS_NAMESPACE::ipc::signal::terminate;
 			using __OS_NAMESPACE::ipc::signal::send;
 		}
-		using __OS_NAMESPACE::ipc::pipe;
+		//using __OS_NAMESPACE::ipc::pipe;
 		using __OS_NAMESPACE::ipc::event;
 	}
 	namespace numa
 	{
-		using __OS_NAMESPACE::numa::node;
+		/*using __OS_NAMESPACE::numa::node;
 		using __OS_NAMESPACE::numa::processor;
 		using __OS_NAMESPACE::numa::cpu_set;
-		using __OS_NAMESPACE::numa::cpu_set_info;
+		using __OS_NAMESPACE::numa::cpu_set_info;*/
 	}
 
-	using __OS_NAMESPACE::counting_semaphore;
+	/*using __OS_NAMESPACE::counting_semaphore;
 	using __OS_NAMESPACE::mutex;
 	using __OS_NAMESPACE::shared_mutex;
-	using __OS_NAMESPACE::condition_variable;
+	using __OS_NAMESPACE::condition_variable;*/
 }

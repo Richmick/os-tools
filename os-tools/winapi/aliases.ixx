@@ -42,6 +42,14 @@ export namespace winapi
 	using cpuset_info = SYSTEM_CPU_SET_INFORMATION;
 	using cpuset_info_type = CPU_SET_INFORMATION_TYPE;
 	using processor_number = PROCESSOR_NUMBER;
+	constexpr inline handle_t empty_handle = nullptr;
+
+	enum class io: dword_t
+	{
+		in = STD_INPUT_HANDLE,
+		out = STD_OUTPUT_HANDLE,
+		err = STD_ERROR_HANDLE
+	};
 
 	using char_t = wchar_t; ///< Preferable char type for calls
 	using string = std::wstring; ///< Preferable string type for calls
@@ -202,13 +210,6 @@ export namespace winapi
 	void throw_on_error(std::error_code err, const std::string& msg);
 	void process_error(bool success, std::error_code& err) noexcept;
 	handle_t process_error(handle_t res, std::error_code& err) noexcept;
-	
-	enum class io: dword_t
-	{
-		in = STD_INPUT_HANDLE,
-		out = STD_OUTPUT_HANDLE,
-		err = STD_ERROR_HANDLE
-	};
 
 	void wait(handle_t h);
 	bool wait(handle_t h, std::error_code& err) noexcept;

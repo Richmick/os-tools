@@ -40,7 +40,6 @@ public:
 	void swap(unique_handle& rhs) noexcept;
 	void close() noexcept;
 
-	handle_t* operator&() noexcept;
 	operator bool() const noexcept;
 
 	std::strong_ordering operator<=>(const unique_handle& rhs) const noexcept;

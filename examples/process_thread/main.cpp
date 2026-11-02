@@ -1,3 +1,5 @@
+#include <os-tools/os_macro.hpp>
+
 import std;
 import os;
 import os.argv_parser;
@@ -27,9 +29,8 @@ void thread_func(std::chrono::system_clock::time_point deadline)
 
 int main(int argc, const char*const* argv)
 {
-	std::println("{} {} priority proc_{}::thread_{}",
+	std::println("{} priority proc_{}::thread_{}",
 				os::this_process::get_id(),
-				os::this_process::executable(),
 				static_cast< int >(os::this_process::get_priority()),
 				static_cast< int >(os::this_thread::get_priority()));
 
@@ -80,9 +81,9 @@ int main(int argc, const char*const* argv)
 		return 1;
 	}
 	os::this_process::set_env("test_var", "env was inherited");
-	std::vector< std::string > args = {"-s", std::format("--nthreads={}", nthreads),
-				std::format("--lifetime={}", lifetime.count())};
-	os::process proc{os::call_self, args};
+	std::vector< os::string > args = {OS_STR("-s"), std::format(OS_STR("--nthreads={}"), nthreads),
+				std::format(OS_STR("--lifetime={}"), lifetime.count())};
+	os::process proc{os::this_process::executable(), args};
 	proc.set_priority(os::process::priority::normal);
 	std::println("child is alive - {}", proc.alive());
 	std::println("child wait got result - {}", proc.wait());

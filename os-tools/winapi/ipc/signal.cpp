@@ -43,12 +43,7 @@ void winapi::ipc::signal::send(dword_t process_group_id, type t)
 }
 bool winapi::ipc::signal::send(dword_t process_group_id, type t, std::error_code& err) noexcept
 {
-	if (winapi::calls::GenerateConsoleCtrlEvent(static_cast< dword_t >(t), process_group_id))
-	{
-		err = winapi::last_error_code();
-		return false;
-	}
-	err.clear();
-	return true;
+	process_error(winapi::calls::GenerateConsoleCtrlEvent(static_cast< dword_t >(t), process_group_id), err);
+	return static_cast< bool >(err);
 }
 #endif

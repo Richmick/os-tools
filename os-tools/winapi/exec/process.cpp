@@ -18,6 +18,10 @@ winapi::process::id winapi::this_process::get_id()
 {
 	return winapi::calls::GetCurrentProcessId();
 }
+winapi::process::group_id winapi::this_process::get_group_id()
+{
+	return get_id();
+}
 winapi::process::priority winapi::this_process::get_priority()
 {
 	return static_cast< process::priority >(winapi::calls::GetPriorityClass(native_handle()));
@@ -29,6 +33,10 @@ void winapi::this_process::set_priority(process::priority p)
 	{
 		throw winapi::last_error("failed to set process priority");
 	}
+}
+void winapi::this_process::signal(ipc::signal::type type)
+{
+	ipc::signal::send(get_group_id(), type);
 }
 winapi::path winapi::this_process::executable()
 {
@@ -117,6 +125,10 @@ winapi::process::id winapi::process::get_id() const
 	if (result == 0) throw winapi::last_error("failed to get process id");
 	return result;
 }
+winapi::process::group_id winapi::process::get_group_id() const
+{
+	return get_id();
+}
 bool winapi::process::joinable() const noexcept
 {
 	return native_;
@@ -181,6 +193,14 @@ int winapi::process::exit_code() const
 		throw winapi::last_error("failed to retrieve process exit code");
 	}
 	return static_cast< int >(result);
+}
+void winapi::process::signal(ipc::signal::type type)
+{
+	ipc::signal::send(get_group_id(), type);
+}
+void winapi::process::terminate()
+{
+	signal(ipc::signal::terminate);
 }
 void winapi::process::kill()
 {

@@ -32,8 +32,6 @@ export namespace winapi
 	public:
 		/// Priorities for processes (do not match thread priorities)
 		enum class priority: dword_t;
-		/// Signal type enum
-		using signal = winapi::ipc::signal::type;
 		/// Set of parameters for precise startup within ascii charset
 		struct initial_params_a;
 		/// Set of parameters for precise startup
@@ -110,10 +108,11 @@ export namespace winapi
 		void swap(process& rhs) noexcept;
 
 		id get_id() const;
+		group_id get_group_id() const;
 		int exit_code() const;
 
 		bool joinable() const noexcept;
-		bool alive() const; // wait for no time
+		bool alive() const;
 		int wait() const;
 		bool wait(std::chrono::milliseconds dur) const;
 		int join();
@@ -123,8 +122,10 @@ export namespace winapi
 		priority get_priority() const;
 		void set_priority(priority p) const;
 
-		void kill();
-		void kill(int exit_code);
+		void signal(ipc::signal::type type);
+		void terminate(); // send signal terminate request
+		void kill(); // no chance to process kill, still joinable
+		void kill(int exit_code); // no chance to process kill, still joinable
 
 	private:
 		static constexpr inline dword_t create_new_group = CREATE_NEW_PROCESS_GROUP;
@@ -140,6 +141,7 @@ export namespace winapi
 	{
 		process::native_handle_type native_handle();
 		process::id get_id();
+		process::group_id get_group_id();
 		path executable();
 		std::optional< std::string > get_env(const std::string& name);
 		void set_env(const std::string& name, const std::string& value);
@@ -147,6 +149,7 @@ export namespace winapi
 		std::unordered_map< std::string, std::string > environment();
 		process::priority get_priority();
 		void set_priority(process::priority p);
+		void signal(ipc::signal::type type = ipc::signal::interrupt);
 
 		[[noreturn]] void _exit(int code);
 
@@ -203,9 +206,9 @@ struct winapi::process::initial_params
 	process::priority priority = process::priority::unset;
 
 	startup_info_t< wchar_t > startup_info{.cb = sizeof(startup_info_t< wchar_t >)}; // can be modified
-	handle_t stdin = nullptr;
-	handle_t stdout = nullptr;
-	handle_t stderr = nullptr;
+	handle_t stdin = empty_handle;
+	handle_t stdout = empty_handle;
+	handle_t stderr = empty_handle;
 };
 
 

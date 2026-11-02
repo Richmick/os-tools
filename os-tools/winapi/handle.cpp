@@ -20,13 +20,8 @@ void winapi::set_inheritance(inheritmode inherit, handle_t h)
 bool winapi::set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept
 {
 	constexpr dword_t flag = HANDLE_FLAG_INHERIT;
-	if (!winapi::calls::SetHandleInformation(h, flag, (inherit == inheritmode::all ? flag : 0)))
-	{
-		err = winapi::last_error_code();
-		return false;
-	}
-	err.clear();
-	return true;
+	process_error(winapi::calls::SetHandleInformation(h, flag, (inherit == inheritmode::all ? flag : 0)), err);
+	return static_cast< bool >(err);
 }
 
 winapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:
@@ -73,11 +68,6 @@ void winapi::unique_handle::close() noexcept
 	}
 }
 
-winapi::handle_t* winapi::unique_handle::operator&() noexcept
-{
-	close();
-	return &native_;
-}
 winapi::unique_handle::operator bool() const noexcept
 {
 	return !is_blank(native_);

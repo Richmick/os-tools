@@ -12,7 +12,14 @@ export namespace winapi::ipc::signal
 {
 	using callback = PHANDLER_ROUTINE;
 	/// Signal type enum
-	enum type: dword_t;
+	enum type: dword_t
+	{
+		interrupt = CTRL_C_EVENT, ///< Sigint (ctrl+c), sendable
+		terminate = CTRL_BREAK_EVENT, ///< Sigbreak (ctrl+break), sendable
+		close = CTRL_CLOSE_EVENT,
+		logoff = CTRL_LOGOFF_EVENT,
+		shutdown = CTRL_SHUTDOWN_EVENT
+	};
 
 	/// Add callback to process' list
 	void register_callback(callback cb);
@@ -27,13 +34,4 @@ export namespace winapi::ipc::signal
 	void send(dword_t process_group_id, type t);
 	bool send(dword_t process_group_id, type t, std::error_code& err) noexcept;
 }
-
-enum winapi::ipc::signal::type: winapi::dword_t
-{
-	sigint = CTRL_C_EVENT, ///< Sigint (ctrl+c), sendable
-	sigkill = CTRL_BREAK_EVENT, ///< Sigbreak (ctrl+break), sendable
-	close = CTRL_CLOSE_EVENT,
-	logoff = CTRL_LOGOFF_EVENT,
-	shutdown = CTRL_SHUTDOWN_EVENT
-};
 #endif

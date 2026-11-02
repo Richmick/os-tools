@@ -4,11 +4,19 @@ import os;
 #ifdef _WIN32
 int __stdcall sig_handler(winapi::dword_t type)
 {
-	if (type == os::ipc::signal::type::sigkill)
+	if (type == os::ipc::signal::type::terminate)
 	{
 		os::this_process::_exit(2);
 	}
 	return true;
+}
+#elifdef __linux__
+void sig_handler(int type, linapi::siginfo_t* info, void* context)
+{
+	if (type == os::ipc::signal::type::terminate)
+	{
+		os::this_process::_exit(2);
+	}
 }
 #endif
 
@@ -53,7 +61,14 @@ int main(int argc, const char*const* argv)
 	}
 	if (flags.has("sig-test"))
 	{
+#ifdef _WIN32
 		winapi::ipc::signal::register_callback(sig_handler);
+#elifdef __linux__
+		//linapi::ipc::signal::register_callback(sig_handler);
+#else
+		if (init_event) init_event.signal();
+		return 0;
+#endif
 		if (init_event) init_event.signal();
 		while (true)
 		{

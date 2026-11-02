@@ -77,6 +77,7 @@ namespace linapi
 	{
 		thread_handle_t native_handle();
 		thread_handle_t get_id();
+		process_handle_t get_process_id();
 		[[noreturn]] void exit(int code);
 		[[noreturn]] void exit(void* data);
 		thread::priority get_priority();

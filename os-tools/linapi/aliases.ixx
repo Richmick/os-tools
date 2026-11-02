@@ -6,6 +6,8 @@ module;
 		#include <spawn.h>
 		#include <signal.h>
 		#include <sys/wait.h>
+		#include <sys/eventfd.h>
+		#include <fcntl.h>
 	#endif
 export module os.linapi:aliases;
 
@@ -14,33 +16,75 @@ import std;
 
 export namespace linapi
 {
+	using std::unique_lock;
+	using std::shared_lock;
+	using std::filesystem::path;
+
+	enum class inheritmode: bool
+	{
+		none = false,
+		all = true
+	};
+	enum class openmode
+	{
+		closed, in, out, inout
+	};
+	struct make_empty_t
+	{};
+	constexpr inline make_empty_t make_empty;
+	struct open_by_name_t
+	{};
+	constexpr inline open_by_name_t open_by_name;
+
 	class unique_handle;
 	class thread;
 	class process;
 
 	using handle_t = int;
+	using int_handle_t = int;
 	using ::idtype_t;
 	using ::siginfo_t;
 	using scheduler_settings_t = sched_param;
 	using thread_handle_t = pthread_t;
 	using process_handle_t = pid_t;
 	using thread_attributes_t = pthread_attr_t;
+	constexpr inline handle_t empty_handle = -1;
+
+	enum class io
+	{
+		in = STDIN_FILENO,
+		out = STDOUT_FILENO,
+		err = STDERR_FILENO
+	};
+
+	using char_t = char; ///< Preferable char type for calls
+	using string = std::string; ///< Preferable string type for calls
+	using string_view = std::string_view; ///< Preferable string type for calls
+	string to_string(handle_t h);
+	handle_t to_handle(const string& h);
+	handle_t to_handle(const string_view& h);
 
 	using ::environ;
 
 	namespace calls
 	{
 		using ::readlink;
+		// Handles
+		using ::read;
+		using ::write;
 		using ::close;
+		using ::fcntl;
 
 		// Process
 		using ::getpid;
 		using ::setsid;
 		using ::getppid;
+		using ::getpgid;
 		using ::getenv;
 		using ::setenv;
 		using ::unsetenv;
 		using ::kill;
+		using ::killpg;
 		using ::posix_spawn;
 		using ::fork;
 		using ::vfork;
@@ -72,10 +116,18 @@ export namespace linapi
 		using ::pthread_attr_setstacksize;
 		using ::pthread_attr_setschedpolicy;
 		using ::pthread_attr_setinheritsched;
+
+		// Events
+		using ::eventfd;
 	}
 
+	std::error_code last_error_code();
 	std::system_error last_error(const char* msg);
 	std::system_error last_error(const std::string& msg);
+	void throw_on_error(std::error_code err, const char* msg);
+	void throw_on_error(std::error_code err, const std::string& msg);
+	void process_error(bool success, std::error_code& err) noexcept;
+	handle_t process_error(handle_t res, std::error_code& err) noexcept;
 
 	enum class priority
 	{
@@ -85,16 +137,6 @@ export namespace linapi
 		realtime = SCHED_FIFO,
 		greater_realtime = SCHED_RR,
 		unset = -1
-	};
-	enum class signal
-	{
-		terminate = SIGTERM,
-		kill = SIGKILL,
-		stop = SIGSTOP,
-		interrupt = SIGINT,
-		broken_pipe = SIGPIPE,
-		poll = SIGPOLL,
-		child_exit = SIGCHLD
 	};
 }
 

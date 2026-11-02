@@ -5,19 +5,21 @@ import std;
 #ifdef __linux__
 import :aliases;
 
-namespace linapi
+export namespace linapi
 {
 	class unique_handle;
-	export template< class CharT, class Traits >
+	template< class CharT, class Traits >
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const linapi::unique_handle& rhs);
-	export bool is_blank(handle_t h) noexcept;
+	bool is_blank(handle_t h) noexcept;
+	void set_inheritance(inheritmode inherit, handle_t h);
+	bool set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept;
 }
-namespace std
+export namespace std
 {
-	export template<>
+	template<>
 	struct hash< linapi::unique_handle >;
-	export void swap(linapi::unique_handle& lhs, linapi::unique_handle& rhs) noexcept;
+	void swap(linapi::unique_handle& lhs, linapi::unique_handle& rhs) noexcept;
 }
 
 class linapi::unique_handle
@@ -35,11 +37,10 @@ public:
 
 	handle_t get() const noexcept;
 	handle_t release() noexcept;
-	void reset(handle_t new_handle = -1) noexcept;
+	void reset(handle_t new_handle = empty_handle) noexcept;
 	void swap(unique_handle& rhs) noexcept;
 	void close() noexcept;
 
-	handle_t* operator&() noexcept;
 	operator bool() const noexcept;
 
 	std::strong_ordering operator<=>(const unique_handle& rhs) noexcept;
@@ -47,7 +48,7 @@ public:
 	bool operator==(std::nullptr_t) noexcept;
 
 private:
-	handle_t native_ = -1;
+	handle_t native_ = empty_handle;
 };
 template<>
 struct std::hash< linapi::unique_handle >: hash< linapi::handle_t >

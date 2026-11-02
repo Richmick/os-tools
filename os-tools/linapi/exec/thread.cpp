@@ -24,6 +24,10 @@ linapi::thread::id linapi::this_thread::get_id()
 {
 	return this_thread::native_handle();
 }
+linapi::process::id linapi::this_thread::get_process_id()
+{
+	return this_process::get_id();
+}
 linapi::thread::priority linapi::this_thread::get_priority()
 {
 	int prior;
@@ -171,7 +175,7 @@ void linapi::thread::detach()
 }
 void linapi::thread::kill() const
 {
-	if (linapi::calls::pthread_kill(native_, static_cast< int >(linapi::signal::kill)) != 0)
+	if (linapi::calls::pthread_kill(native_, static_cast< int >(linapi::ipc::signal::kill)) != 0)
 	{
 		throw linapi::last_error("failed to kill thread");
 	}

@@ -1,3 +1,7 @@
+module;
+	#ifdef __linux__
+		#include <fcntl.h>
+	#endif
 module os.linapi;
 
 #ifdef __linux__
@@ -7,6 +11,18 @@ bool linapi::is_blank(handle_t h) noexcept
 {
 	return h < 0;
 }
+void linapi::set_inheritance(inheritmode inherit, handle_t h)
+{
+	std::error_code err;
+	set_inheritance(inherit, h, err);
+	throw_on_error(err, "failed to set handle inheritance");
+}
+bool linapi::set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept
+{
+	constexpr int flag = FD_CLOEXEC;
+	process_error(linapi::calls::fcntl(h, F_SETFD, (inherit == inheritmode::all ? 0 : flag)) != -1, err);
+	return !static_cast< bool >(err);
+}
 
 linapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:
 	native_(rhs.release())
@@ -15,7 +31,7 @@ linapi::unique_handle::unique_handle(handle_t handle) noexcept:
 	native_(handle)
 {}
 linapi::unique_handle::unique_handle(std::nullptr_t) noexcept:
-	native_(-1)
+	native_(empty_handle)
 {}
 linapi::unique_handle::~unique_handle()
 {
@@ -33,7 +49,7 @@ linapi::handle_t linapi::unique_handle::get() const noexcept
 }
 linapi::handle_t linapi::unique_handle::release() noexcept
 {
-	return std::exchange(native_, -1);
+	return std::exchange(native_, empty_handle);
 }
 void linapi::unique_handle::reset(handle_t new_handle) noexcept
 {
@@ -52,14 +68,9 @@ void linapi::unique_handle::close() noexcept
 	}
 }
 
-linapi::handle_t* linapi::unique_handle::operator&() noexcept
-{
-	close();
-	return &native_;
-}
 linapi::unique_handle::operator bool() const noexcept
 {
-	return is_blank(native_);
+	return !is_blank(native_);
 }
 std::strong_ordering linapi::unique_handle::operator<=>(const unique_handle& rhs) noexcept
 {
