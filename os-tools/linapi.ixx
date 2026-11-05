@@ -8,5 +8,6 @@ export import :thread;
 export import :process;
 
 // IPC
+export import :pipe;
 export import :signal;
 export import :event;

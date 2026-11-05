@@ -58,7 +58,7 @@ BOOST_AUTO_TEST_CASE(sig_ignore_test,
 	proc.terminate();
 	BOOST_TEST(proc.join() == 2);
 }
-/*BOOST_AUTO_TEST_CASE(pipe_test,
+BOOST_AUTO_TEST_CASE(pipe_test,
 			* boost::unit_test::depends_on{"process_tests/startup_test"}
 			* boost::unit_test::depends_on{"pipe_tests"})
 {
@@ -66,25 +66,26 @@ BOOST_AUTO_TEST_CASE(sig_ignore_test,
 	constexpr char msg2[] = "msg2";
 	constexpr char resp1[] = "resp1 ";
 	constexpr char resp2[] = "resp2";
-	os::ipc::pipe downlink{os::inheritmode::all, std::size(msg1) + std::size(msg2)};
-	os::ipc::pipe uplink{os::inheritmode::all, std::size(resp1) + std::size(resp2)};
-	os::set_inheritance(os::inheritmode::none, downlink.native_write_handle());
-	os::set_inheritance(os::inheritmode::none, uplink.native_read_handle());
+
+	auto [downlink_read, downlink_write] = os::ipc::create_pipe(os::inheritmode::all);
+	auto [uplink_read, uplink_write] = os::ipc::create_pipe(os::inheritmode::all);
+	downlink_write.disable_handle_inheritance();
+	uplink_read.disable_handle_inheritance();
 
 	os::process::initial_params params = {
 				.inherit_handles = os::inheritmode::all,
-				.stdin = downlink.native_read_handle(),
-				.stdout = uplink.native_write_handle(),
+				.stdin = downlink_read.native_handle(),
+				.stdout = uplink_write.native_handle(),
 				.stderr = os::this_process::stderr()
 			};
 	os::process proc{params, child_path, std::initializer_list{OS_STR("-i")}};
-	downlink.close_read_handle();
-	uplink.close_write_handle();
+	downlink_read.close_handle();
+	uplink_write.close_handle();
 
-	downlink.write(msg1);
-	downlink.write(msg2);
-	downlink.close_write_handle(); // send eol
+	downlink_write.write(msg1);
+	downlink_write.write(msg2);
+	downlink_write.close_handle(); // send eol
 	BOOST_TEST(proc.join() == 0);
-}*/
+}
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -64,7 +64,8 @@ int main(int argc, const char*const* argv)
 #ifdef _WIN32
 		winapi::ipc::signal::register_callback(sig_handler);
 #elifdef __linux__
-		//linapi::ipc::signal::register_callback(sig_handler);
+		linapi::ipc::signal::register_callback(sig_handler, os::ipc::signal::terminate);
+		linapi::ipc::signal::register_callback(sig_handler, os::ipc::signal::interrupt);
 #else
 		if (init_event) init_event.signal();
 		return 0;

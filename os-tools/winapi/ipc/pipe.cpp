@@ -100,11 +100,11 @@ bool winapi::ipc::pipe::can_write() const noexcept
 
 winapi::ipc::pipe winapi::ipc::pipe::release_read() noexcept
 {
-	return pipe{read_.release(), nullptr};
+	return pipe{read_.release(), empty_handle};
 }
 winapi::ipc::pipe winapi::ipc::pipe::release_write() noexcept
 {
-	return pipe{nullptr, write_.release()};
+	return pipe{empty_handle, write_.release()};
 }
 
 void winapi::ipc::pipe::write(std::string_view data)

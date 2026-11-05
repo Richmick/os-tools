@@ -15,7 +15,7 @@ set(cxx_sources
 	"boost-unit-main.cpp"
 	"thread-test.cpp"
 	"process-test.cpp"
-	#"pipe-test.cpp"
+	"pipe-test.cpp"
 	#"numa-test.cpp"
 )
 set(cxx_modules)

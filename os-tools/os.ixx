@@ -74,7 +74,9 @@ export namespace os
 			using __OS_NAMESPACE::ipc::signal::terminate;
 			using __OS_NAMESPACE::ipc::signal::send;
 		}
-		//using __OS_NAMESPACE::ipc::pipe;
+		using __OS_NAMESPACE::ipc::pipe;
+		using __OS_NAMESPACE::ipc::create_pipe;
+
 		using __OS_NAMESPACE::ipc::event;
 	}
 	namespace numa

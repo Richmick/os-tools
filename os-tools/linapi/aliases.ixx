@@ -7,6 +7,7 @@ module;
 		#include <signal.h>
 		#include <sys/wait.h>
 		#include <sys/eventfd.h>
+		#include <sys/resource.h>
 		#include <fcntl.h>
 	#endif
 export module os.linapi:aliases;
@@ -25,7 +26,7 @@ export namespace linapi
 		none = false,
 		all = true
 	};
-	enum class openmode
+	enum class openmode: std::uint8_t
 	{
 		closed, in, out, inout
 	};
@@ -44,6 +45,8 @@ export namespace linapi
 	using int_handle_t = int;
 	using ::idtype_t;
 	using ::siginfo_t;
+	using sigaction_t = struct ::sigaction;
+	using rlimit_t = struct ::rlimit;
 	using scheduler_settings_t = sched_param;
 	using thread_handle_t = pthread_t;
 	using process_handle_t = pid_t;
@@ -73,7 +76,12 @@ export namespace linapi
 		using ::read;
 		using ::write;
 		using ::close;
+		using ::dup;
+		using ::dup2;
+		using ::dup3;
 		using ::fcntl;
+		using ::getrlimit;
+		using ::closefrom;
 
 		// Process
 		using ::getpid;
@@ -83,8 +91,6 @@ export namespace linapi
 		using ::getenv;
 		using ::setenv;
 		using ::unsetenv;
-		using ::kill;
-		using ::killpg;
 		using ::posix_spawn;
 		using ::fork;
 		using ::vfork;
@@ -117,8 +123,17 @@ export namespace linapi
 		using ::pthread_attr_setschedpolicy;
 		using ::pthread_attr_setinheritsched;
 
+		// Pipes
+		using ::pipe;
+		using ::pipe2;
+
 		// Events
 		using ::eventfd;
+
+		// Signals
+		using ::sigaction;
+		using ::kill;
+		using ::killpg;
 	}
 
 	std::error_code last_error_code();

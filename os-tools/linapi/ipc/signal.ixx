@@ -9,6 +9,7 @@ import :aliases;
 
 export namespace linapi::ipc::signal
 {
+	using callback = void(*)(int, siginfo_t*, void*);
 	/// Signal type enum
 	enum type
 	{
@@ -20,6 +21,11 @@ export namespace linapi::ipc::signal
 		poll = SIGPOLL,
 		child_exit = SIGCHLD
 	};
+
+	/// Add callback to process' list
+	void register_callback(callback cb, type t);
+	/// Add callback to process' list
+	bool register_callback(callback cb, type t, std::error_code& err) noexcept;
 
 	void send(pid_t process_group_id, type t);
 	bool send(pid_t process_group_id, type t, std::error_code& err) noexcept;

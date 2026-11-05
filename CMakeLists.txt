@@ -55,6 +55,7 @@ set(cxx_sources
 	"os-tools/linapi/exec/process.cpp"
 	"os-tools/linapi/exec/process_ctors.cpp"
 	"os-tools/linapi/exec/process_subcalls.cpp"
+	"os-tools/linapi/ipc/pipe.cpp"
 	"os-tools/linapi/ipc/signal.cpp"
 	"os-tools/linapi/ipc/event.cpp"
 )
@@ -83,6 +84,7 @@ set(cxx_modules
 	"os-tools/linapi/handle.ixx"
 	"os-tools/linapi/exec/thread.ixx"
 	"os-tools/linapi/exec/process.ixx"
+	"os-tools/linapi/ipc/pipe.ixx"
 	"os-tools/linapi/ipc/signal.ixx"
 	"os-tools/linapi/ipc/event.ixx"
 )

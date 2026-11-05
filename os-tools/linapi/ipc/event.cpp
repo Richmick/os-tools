@@ -85,7 +85,9 @@ std::uint64_t linapi::ipc::event::wait(std::error_code& err) noexcept
 {
 	std::uint64_t value = 1;
 	if (linapi::calls::read(native_.get(), &value, sizeof(value)) >= 0)
+	{
 		err.clear();
+	}
 	else
 	{
 		std::error_code error = linapi::last_error_code();

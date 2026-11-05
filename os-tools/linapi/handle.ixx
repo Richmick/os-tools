@@ -8,6 +8,7 @@ import :aliases;
 export namespace linapi
 {
 	class unique_handle;
+	class handle_container_base;
 	template< class CharT, class Traits >
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const linapi::unique_handle& rhs);
@@ -41,6 +42,11 @@ public:
 	void swap(unique_handle& rhs) noexcept;
 	void close() noexcept;
 
+	void enable_inheritance() const;
+	bool enable_inheritance(std::error_code& err) const noexcept;
+	void disable_inheritance() const;
+	bool disable_inheritance(std::error_code& err) const noexcept;
+
 	operator bool() const noexcept;
 
 	std::strong_ordering operator<=>(const unique_handle& rhs) noexcept;
@@ -49,6 +55,28 @@ public:
 
 private:
 	handle_t native_ = empty_handle;
+};
+class linapi::handle_container_base
+{
+public:
+	using native_handle_type = handle_t;
+
+	handle_container_base() noexcept = default;
+	handle_container_base(unique_handle&& rhs) noexcept;
+	handle_container_base(native_handle_type rhs) noexcept;
+
+	native_handle_type native_handle() const noexcept;
+	native_handle_type release_handle() noexcept;
+	void close_handle() noexcept;
+	operator bool() const noexcept;
+
+	void enable_handle_inheritance() const;
+	bool enable_handle_inheritance(std::error_code& err) const noexcept;
+	void disable_handle_inheritance() const;
+	bool disable_handle_inheritance(std::error_code& err) const noexcept;
+
+protected:
+	unique_handle native_;
 };
 template<>
 struct std::hash< linapi::unique_handle >: hash< linapi::handle_t >

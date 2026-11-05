@@ -99,7 +99,7 @@ std::size_t winapi::ipc::pipe::try_read(std::span< std::byte, N > data)
 	assert(read_);
 	if (!winapi::calls::ReadFile(read_.get(), data.data(), size, &read_count, nullptr))
 	{
-		throw winapi::last_error("failed to write to pipe");
+		throw winapi::last_error("failed to read from pipe");
 	}
 	return static_cast< std::size_t >(read_count);
 }

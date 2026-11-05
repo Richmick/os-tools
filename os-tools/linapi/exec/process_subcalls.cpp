@@ -44,9 +44,10 @@ linapi::ready_args_t linapi::prepare_cmd_args(const path& app, std::span< const 
 }
 linapi::process::native_handle_type linapi::process::create(const char* app, char*const* argv, std::error_code& err)
 {
-	process_handle_t h = linapi::calls::vfork();
+	process_handle_t h = linapi::calls::fork();
 	if (h == 0)
 	{
+		linapi::calls::closefrom(this_process::stderr() + 1);
 		linapi::calls::execv(app, argv);
 		linapi::calls::_exit(-1);
 	}
@@ -59,7 +60,32 @@ linapi::process::native_handle_type linapi::process::create(const char* app, cha
 linapi::process::native_handle_type linapi::process::create(initial_params& params,
 			const char* app, char*const* argv, std::error_code& err)
 {
-	return create(app, argv, err);
+	bool manual_std_io = (params.stdin != empty_handle)
+			|| (params.stdout != empty_handle) || (params.stderr != empty_handle);
+	process_handle_t h = linapi::calls::fork();
+	if (h == 0)
+	{
+		if (manual_std_io)
+		{
+			if (params.stdin != empty_handle) linapi::calls::dup2(params.stdin, this_process::stdin());
+			else linapi::calls::close(this_process::stdin());
+			if (params.stdout != empty_handle) linapi::calls::dup2(params.stdout, this_process::stdout());
+			else linapi::calls::close(this_process::stdout());
+			if (params.stderr != empty_handle) linapi::calls::dup2(params.stderr, this_process::stderr());
+			else linapi::calls::close(this_process::stderr());
+		}
+		if (params.inherit_handles == inheritmode::none)
+		{
+			linapi::calls::closefrom(this_process::stderr() + 1);
+		}
+		linapi::calls::execv(app, argv);
+		linapi::calls::_exit(-1);
+	}
+	else if (h == -1)
+		err = linapi::last_error_code();
+	else
+		err.clear();
+	return h;
 }
 
 #endif

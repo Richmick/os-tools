@@ -111,6 +111,7 @@ export namespace linapi
 		process(ready_args_t argv, std::error_code& err);
 		process(initial_params& params, ready_args_t argv);
 		process(initial_params& params, ready_args_t argv, std::error_code& err);
+
 		static native_handle_type create(const char* app, char*const* console, std::error_code& err);
 		static native_handle_type create(initial_params& params, const char* app, char*const* console, std::error_code& err);
 	};
