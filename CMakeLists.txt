@@ -3,7 +3,6 @@
 include(cmake/import-std/enable_import_std.cmake)
 include(cmake/import-std.cmake)
 
-enable_experimental_std()
 project("os-tools"
 		VERSION 0.0.8
 		DESCRIPTION "Os tools library"
@@ -48,7 +47,7 @@ set(cxx_sources
 	"os-tools/winapi/ipc/signal.cpp"
 	"os-tools/winapi/ipc/event.cpp"
 	"os-tools/winapi/numa/nodes.cpp"
-	
+
 	"os-tools/linapi/aliases.cpp"
 	"os-tools/linapi/handle.cpp"
 	"os-tools/linapi/exec/thread.cpp"
@@ -105,7 +104,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 	SOVERSION ${PROJECT_VERSION_MAJOR}
 	VERSION ${PROJECT_VERSION}
 )
-enable_cxx_modules(${PROJECT_NAME} STANDARD 23 STD_MODULE ON)
+enable_cxx_modules(${PROJECT_NAME} STANDARD 23 STD_MODULE OFF)
 target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 
 if (OS_TOOLS_BUILD_TESTS)

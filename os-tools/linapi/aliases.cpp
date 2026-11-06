@@ -1,10 +1,11 @@
 module;
 	#include <cerrno>
+	#include <string>
+	#include <string_view>
+	#include <system_error>
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 linapi::string linapi::to_string(handle_t h)
 {
 	return std::to_string(h);

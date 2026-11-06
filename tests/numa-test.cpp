@@ -1,6 +1,7 @@
+#include <print>
+#include <vector>
 #include <boost/test/unit_test.hpp>
 
-import std;
 import os;
 
 BOOST_AUTO_TEST_SUITE(numa_tests)

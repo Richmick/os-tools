@@ -1,8 +1,12 @@
+module;
+	#ifdef __linux__
+		#include <span>
+		#include <system_error>
+		#include <vector>
+	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 linapi::ready_args_t linapi::prepare_cmd_args(const char* app, std::span< const char*const > args)
 {
 	ready_args_t result;
@@ -47,7 +51,7 @@ linapi::process::native_handle_type linapi::process::create(const char* app, cha
 	process_handle_t h = linapi::calls::fork();
 	if (h == 0)
 	{
-		linapi::calls::closefrom(this_process::stderr() + 1);
+		//linapi::calls::closefrom(this_process::stderr() + 1);
 		linapi::calls::execv(app, argv);
 		linapi::calls::_exit(-1);
 	}
@@ -76,7 +80,7 @@ linapi::process::native_handle_type linapi::process::create(initial_params& para
 		}
 		if (params.inherit_handles == inheritmode::none)
 		{
-			linapi::calls::closefrom(this_process::stderr() + 1);
+			//linapi::calls::closefrom(this_process::stderr() + 1);
 		}
 		linapi::calls::execv(app, argv);
 		linapi::calls::_exit(-1);

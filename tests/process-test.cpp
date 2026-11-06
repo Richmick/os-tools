@@ -1,7 +1,8 @@
+#include <chrono>
+#include <thread>
 #include <boost/test/unit_test.hpp>
 #include <os-tools/os_macro.hpp>
 
-import std;
 import os;
 
 #undef stdin

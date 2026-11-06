@@ -1,12 +1,15 @@
 module;
 	#ifdef __linux__
+		#include <cstddef>
+		#include <span>
+		#include <string_view>
+		#include <system_error>
+		#include <utility>
 		#include <fcntl.h>
 	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 std::pair< linapi::ipc::pipe, linapi::ipc::pipe > linapi::ipc::create_pipe()
 {
 	return create_pipe(inheritmode::none);

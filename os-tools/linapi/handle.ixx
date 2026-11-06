@@ -1,6 +1,9 @@
+module;
+	#ifdef __linux__
+		#include <iosfwd>
+		#include <system_error>
+	#endif
 export module os.linapi:handle;
-
-import std;
 
 #ifdef __linux__
 import :aliases;

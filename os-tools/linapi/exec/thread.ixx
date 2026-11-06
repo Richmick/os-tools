@@ -2,12 +2,16 @@ module;
 	#ifdef __linux__
 		#include <atomic>
 		#include <cassert>
+		#include <cstddef>
+		#include <tuple>
+		#include <type_traits>
+		#include <utility>
+		#include <functional>
 		#include <pthread.h>
 	#endif
 export module os.linapi:thread;
 
 #ifdef __linux__
-import std;
 import :aliases;
 import :process;
 

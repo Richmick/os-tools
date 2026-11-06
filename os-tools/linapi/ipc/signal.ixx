@@ -1,5 +1,6 @@
 module;
 	#ifdef __linux__
+		#include <system_error>
 		#include <signal.h>
 	#endif
 export module os.linapi:signal;

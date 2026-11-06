@@ -9,12 +9,18 @@ module;
 		#include <sys/eventfd.h>
 		#include <sys/resource.h>
 		#include <fcntl.h>
+
+		#include <filesystem>
+		#include <cstdint>
+		#include <mutex>
+		#include <shared_mutex>
+		#include <string>
+		#include <string_view>
+		#include <system_error>
 	#endif
 export module os.linapi:aliases;
 
 #ifdef __linux__
-import std;
-
 export namespace linapi
 {
 	using std::unique_lock;
@@ -81,7 +87,7 @@ export namespace linapi
 		using ::dup3;
 		using ::fcntl;
 		using ::getrlimit;
-		using ::closefrom;
+		//using ::closefrom;
 
 		// Process
 		using ::getpid;

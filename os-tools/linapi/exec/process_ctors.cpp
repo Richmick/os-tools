@@ -1,8 +1,11 @@
+module;
+	#ifdef __linux__
+		#include <span>
+		#include <system_error>
+	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 linapi::process::process(native_handle_type h) noexcept:
 	native_(h)
 {}

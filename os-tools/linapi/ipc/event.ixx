@@ -1,3 +1,7 @@
+module;
+	#ifdef __linux__
+		#include <system_error>
+	#endif
 export module os.linapi:event;
 
 #ifdef __linux__

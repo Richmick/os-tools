@@ -1,12 +1,11 @@
 module;
 	#ifdef __linux__
+		#include <system_error>
 		#include <sys/eventfd.h>
 	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 linapi::ipc::event::event(make_empty_t) noexcept
 {}
 linapi::ipc::event::event(native_handle_type h) noexcept:

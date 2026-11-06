@@ -1,6 +1,8 @@
+#include <span>
+#include <cstring>
+
 #include <boost/test/unit_test.hpp>
 
-import std;
 import os;
 
 BOOST_AUTO_TEST_SUITE(pipe_tests)

@@ -1,12 +1,11 @@
 module;
 	#ifdef __linux__
+		#include <system_error>
 		#include <signal.h>
 	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 void linapi::ipc::signal::register_callback(callback cb, type t)
 {
 	std::error_code err;

@@ -1,13 +1,18 @@
 module;
 	#ifdef __linux__
 		#include <cassert>
+		#include <cstdlib>
+		#include <optional>
+		#include <exception>
+		#include <string>
+		#include <string_view>
+		#include <system_error>
+		#include <unordered_map>
 		#include <sys/wait.h>
 	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 [[noreturn]]
 void linapi::this_process::_exit(int code)
 {
@@ -23,7 +28,7 @@ linapi::process::id linapi::this_process::get_id()
 }
 linapi::process::group_id linapi::this_process::get_group_id()
 {
-	return getpgid(0);
+	return linapi::calls::getpgid(0);
 }
 linapi::process::native_handle_type linapi::this_process::parent_native_handle()
 {
@@ -184,7 +189,7 @@ linapi::process::id linapi::process::get_id() const
 }
 linapi::process::group_id linapi::process::get_group_id() const
 {
-	return getpgid(native_);
+	return linapi::calls::getpgid(native_);
 }
 bool linapi::process::joinable() const noexcept
 {

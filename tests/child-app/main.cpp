@@ -1,4 +1,8 @@
-import std;
+#include <print>
+#include <iostream>
+#include <thread>
+#include <chrono>
+
 import os;
 
 #ifdef _WIN32

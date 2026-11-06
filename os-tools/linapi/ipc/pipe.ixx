@@ -1,9 +1,14 @@
 module;
-	#include <cassert>
+	#ifdef __linux__
+		#include <cassert>
+		#include <cstddef>
+		#include <span>
+		#include <string_view>
+		#include <system_error>
+	#endif
 export module os.linapi:pipe;
 
 #ifdef __linux__
-import std;
 import :aliases;
 import :handle;
 

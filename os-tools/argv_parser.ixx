@@ -1,6 +1,11 @@
+module;
+	#include <concepts>
+	#include <span>
+	#include <string_view>
+	#include <unordered_set>
+	#include <unordered_map>
+	#include <vector>
 export module os.argv_parser;
-
-import std;
 
 namespace os
 {
@@ -94,7 +99,7 @@ os::flags os::argv_parser::parse(std::span< const char* const > args,
 	{
 		std::size_t offset = hint(args.subspan(i));
 		if (offset == 0) offset = parse_arg(args.subspan(i), result);
-		if (offset == static_cast<std::size_t>(-1))
+		if (offset == static_cast< std::size_t >(-1))
 		{
 			result.plain().append_range(args.subspan(i + 1));
 			return result;

@@ -1,10 +1,15 @@
 module;
-	#include <cassert>
+	#ifdef __linux__
+		#include <cassert>
+		#include <utility>
+		#include <exception>
+		#include <thread>
+		#include <stdexcept>
+		#include <system_error>
+	#endif
 module os.linapi;
 
 #ifdef __linux__
-import std;
-
 [[noreturn]]
 void linapi::this_thread::exit(int code)
 {

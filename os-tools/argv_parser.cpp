@@ -1,8 +1,11 @@
 module;
 	#include <cassert>
+	#include <span>
+	#include <string_view>
+	#include <stdexcept>
+	#include <unordered_map>
+	#include <unordered_set>
 module os.argv_parser;
-
-import std;
 
 namespace
 {
