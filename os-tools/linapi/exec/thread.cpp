@@ -1,5 +1,7 @@
 module;
-	#include <cassert>
+	#ifdef __linux__
+		#include <cassert>
+	#endif
 module os.linapi;
 
 #ifdef __linux__

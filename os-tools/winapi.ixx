@@ -17,5 +17,9 @@ export import :pipe;
 export import :signal;
 export import :event;
 
+/// Net
+export import :net_aliases;
+export import :socket;
+
 // Numa
 export import :numa_nodes;

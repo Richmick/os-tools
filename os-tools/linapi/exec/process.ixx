@@ -16,7 +16,7 @@ export namespace linapi
 	ready_args_t prepare_cmd_args(const char* app, std::span< const char*const > args);
 	ready_args_t prepare_cmd_args(const path& app, std::span< const char*const > args);
 	ready_args_t prepare_cmd_args(const path& app, std::span< const std::string > args);
-	
+
 	class process
 	{
 	public:
@@ -37,7 +37,7 @@ export namespace linapi
 		process() noexcept = default;
 		process(process&& rhs) noexcept;
 		explicit process(native_handle_type h) noexcept;
-		
+
 		explicit process(const path& app);
 		explicit process(const path& app, std::span< const string > args);
 		explicit process(const path& app, std::span< const char_t* const > args);

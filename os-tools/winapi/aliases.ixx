@@ -1,8 +1,5 @@
 module;
-	#ifdef _WIN32
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
-	#endif
+	#include <os-tools/winapi/deps.hpp>
 export module os.winapi:aliases;
 
 #ifdef _WIN32
@@ -19,7 +16,7 @@ export namespace winapi
 		none = false,
 		all = true
 	};
-	enum class openmode
+	enum class openmode: std::uint8_t
 	{
 		closed, in, out, inout
 	};
@@ -95,6 +92,7 @@ export namespace winapi
 		// Handles
 		using ::CloseHandle;
 		using ::SetHandleInformation;
+		using ::GetHandleInformation;
 		using ::GetStdHandle;
 
 		// Process
@@ -168,6 +166,8 @@ export namespace winapi
 		using ::WakeConditionVariable;
 
 		// Files
+		using ::CreateFileA;
+		using ::CreateFileW;
 		using ::ReadFile;
 		using ::ReadFileEx;
 		using ::WriteFile;
@@ -175,6 +175,11 @@ export namespace winapi
 
 		// Pipes
 		using ::CreatePipe;
+		using ::CreateNamedPipeA;
+		using ::CreateNamedPipeW;
+		using ::SetNamedPipeHandleState;
+		using ::ConnectNamedPipe;
+		using ::FlushFileBuffers;
 
 		// Events
 		using ::CreateEventA;

@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.8
+		VERSION 0.0.9
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )
@@ -47,8 +47,10 @@ set(cxx_sources
 	"os-tools/winapi/ipc/pipe.cpp"
 	"os-tools/winapi/ipc/signal.cpp"
 	"os-tools/winapi/ipc/event.cpp"
+	"os-tools/winapi/net/aliases.cpp"
+	"os-tools/winapi/net/socket.cpp"
 	"os-tools/winapi/numa/nodes.cpp"
-	
+
 	"os-tools/linapi/aliases.cpp"
 	"os-tools/linapi/handle.cpp"
 	"os-tools/linapi/exec/thread.cpp"
@@ -58,6 +60,9 @@ set(cxx_sources
 	"os-tools/linapi/ipc/pipe.cpp"
 	"os-tools/linapi/ipc/signal.cpp"
 	"os-tools/linapi/ipc/event.cpp"
+)
+set(cxx_private_headers
+	"os-tools/winapi/deps.hpp"
 )
 set(cxx_headers
 	"os-tools/os_macro.hpp"
@@ -77,6 +82,8 @@ set(cxx_modules
 	"os-tools/winapi/ipc/pipe.ixx"
 	"os-tools/winapi/ipc/signal.ixx"
 	"os-tools/winapi/ipc/event.ixx"
+	"os-tools/winapi/net/aliases.ixx"
+	"os-tools/winapi/net/socket.ixx"
 	"os-tools/winapi/numa/nodes.ixx"
 
 	"os-tools/linapi.ixx"
@@ -90,14 +97,19 @@ set(cxx_modules
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})
+target_sources(${PROJECT_NAME} PRIVATE FILE_SET os_tools_private_headers TYPE HEADERS FILES ${cxx_private_headers})
 target_sources(${PROJECT_NAME} PUBLIC FILE_SET os_tools_headers TYPE HEADERS FILES ${cxx_headers})
 target_sources(${PROJECT_NAME} PUBLIC FILE_SET os_tools_modules TYPE CXX_MODULES FILES ${cxx_modules})
 target_include_directories(${PROJECT_NAME} PUBLIC
 	$<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/os-tools>
 	$<INSTALL_INTERFACE:${INSTALL_OS_TOOLS_INCLUDE_DIR}>
 )
+if(WIN32)
+	target_link_libraries(${PROJECT_NAME} PUBLIC wsock32 ws2_32)
+endif()
 
-source_group("Sources" FILES ${cxx_sources})
+source_group("Sources (private)" FILES ${cxx_sources})
+source_group("Headers (private)" FILES ${cxx_private_headers})
 source_group("Interfaces" FILES ${cxx_modules})
 source_group("Headers" FILES ${cxx_headers})
 

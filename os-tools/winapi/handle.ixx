@@ -7,12 +7,15 @@ import :aliases;
 export namespace winapi
 {
 	class unique_handle;
+	class handle_container_base;
 	template< class CharT, class Traits >
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const winapi::unique_handle& rhs);
 	bool is_blank(handle_t h) noexcept;
 	void set_inheritance(inheritmode inherit, handle_t h);
 	bool set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept;
+	inheritmode get_inheritance(handle_t h);
+	inheritmode get_inheritance(handle_t h, std::error_code& err) noexcept;
 }
 namespace std
 {
@@ -40,6 +43,13 @@ public:
 	void swap(unique_handle& rhs) noexcept;
 	void close() noexcept;
 
+	void enable_inheritance() const;
+	bool enable_inheritance(std::error_code& err) const noexcept;
+	void disable_inheritance() const;
+	bool disable_inheritance(std::error_code& err) const noexcept;
+	inheritmode inheritance() const;
+	inheritmode inheritance(std::error_code& err) const noexcept;
+
 	operator bool() const noexcept;
 
 	std::strong_ordering operator<=>(const unique_handle& rhs) const noexcept;
@@ -50,6 +60,31 @@ public:
 
 private:
 	handle_t native_ = nullptr;
+};
+class winapi::handle_container_base
+{
+public:
+	using native_handle_type = handle_t;
+
+	handle_container_base() noexcept = default;
+	handle_container_base(unique_handle&& rhs) noexcept;
+	handle_container_base(native_handle_type rhs) noexcept;
+
+	native_handle_type native_handle() const noexcept;
+	native_handle_type release_handle() noexcept;
+	void close_handle() noexcept;
+	operator bool() const noexcept;
+
+	void enable_handle_inheritance() const;
+	bool enable_handle_inheritance(std::error_code& err) const noexcept;
+	void disable_handle_inheritance() const;
+	bool disable_handle_inheritance(std::error_code& err) const noexcept;
+
+	inheritmode handle_inheritance() const;
+	inheritmode handle_inheritance(std::error_code& err) const noexcept;
+
+protected:
+	unique_handle native_;
 };
 template<>
 struct std::hash< winapi::unique_handle >: hash< winapi::handle_t >

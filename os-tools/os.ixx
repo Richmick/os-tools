@@ -25,6 +25,7 @@ export namespace os
 	using __OS_NAMESPACE::int_handle_t;
 	using __OS_NAMESPACE::unique_handle;
 	using __OS_NAMESPACE::set_inheritance;
+	using __OS_NAMESPACE::get_inheritance;
 
 	using __OS_NAMESPACE::make_empty_t;
 	using __OS_NAMESPACE::make_empty;
@@ -77,7 +78,19 @@ export namespace os
 		using __OS_NAMESPACE::ipc::pipe;
 		using __OS_NAMESPACE::ipc::create_pipe;
 
+		using __OS_NAMESPACE::ipc::named_pipe;
+		using __OS_NAMESPACE::ipc::create_server_pipe;
+		using __OS_NAMESPACE::ipc::open_client_pipe;
+
 		using __OS_NAMESPACE::ipc::event;
+	}
+	namespace net
+	{
+		using __OS_NAMESPACE::net::lib_anchor;
+
+		using __OS_NAMESPACE::net::protocol;
+		using __OS_NAMESPACE::net::address;
+		using __OS_NAMESPACE::net::socket;
 	}
 	namespace numa
 	{
