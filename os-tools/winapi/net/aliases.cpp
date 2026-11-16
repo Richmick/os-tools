@@ -45,45 +45,31 @@ winapi::net::lib_anchor::~lib_anchor()
 	[[maybe_unused]] int err = winapi::calls::WSACleanup();
 }
 
-winapi::net::address::address() noexcept:
-	native_{.sa_family = 0}
-{}
-winapi::net::address::address(sockaddr addr) noexcept:
-	native_(addr)
-{}
-winapi::net::address::address(std::uint8_t p1, std::uint8_t p2,
-			std::uint8_t p3, std::uint8_t p4, std::uint16_t port) noexcept
+winapi::net::address_any::operator winapi::net::address_link() & noexcept
 {
-	native_.sa_family = static_cast< std::uint16_t >(type::ipv4);
-	sockaddr_in& typed = *reinterpret_cast< sockaddr_in* >(&native_);
-	typed.sin_port = port;
-	typed.sin_addr.S_un.S_un_b.s_b1 = p1;
-	typed.sin_addr.S_un.S_un_b.s_b2 = p2;
-	typed.sin_addr.S_un.S_un_b.s_b3 = p3;
-	typed.sin_addr.S_un.S_un_b.s_b4 = p4;
+	sockaddr_in6 k;
+	return {reinterpret_cast< socket_address_t* >(&native), sizeof(native_type)};
 }
-winapi::net::address::type winapi::net::address::get_type() noexcept
+winapi::net::address_any::operator winapi::net::const_address_link() const& noexcept
 {
-	return static_cast< type >(native_.sa_family);
+	return {reinterpret_cast< const socket_address_t* >(&native), sizeof(native_type)};
 }
-std::uint16_t winapi::net::address::port() noexcept
+
+winapi::net::address_ipv4::operator winapi::net::address_link() & noexcept
 {
-	switch (static_cast< type >(native_.sa_family))
-	{
-	case type::ipv4:
-		return reinterpret_cast< sockaddr_in* >(&native_)->sin_port;
-	case type::ipv6:
-		return reinterpret_cast< sockaddr_in6* >(&native_)->sin6_port;
-	default:
-		return 0;
-	}
+	return {reinterpret_cast< socket_address_t* >(&native_), sizeof(native_type)};
 }
-winapi::socket_address_t& winapi::net::address::native() noexcept
+winapi::net::address_ipv4::operator winapi::net::const_address_link() const& noexcept
 {
-	return native_;
+	return {reinterpret_cast< const socket_address_t* >(&native_), sizeof(native_type)};
 }
-const winapi::socket_address_t& winapi::net::address::native() const noexcept
+
+winapi::net::address_ipv6::operator winapi::net::address_link() & noexcept
 {
-	return native_;
+	return {reinterpret_cast< socket_address_t* >(&native_), sizeof(native_type)};
+}
+winapi::net::address_ipv6::operator winapi::net::const_address_link() const& noexcept
+{
+	return {reinterpret_cast< const socket_address_t* >(&native_), sizeof(native_type)};
 }
 #endif

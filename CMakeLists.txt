@@ -70,6 +70,7 @@ set(cxx_headers
 set(cxx_modules
 	"os-tools/argv_parser.ixx"
 	"os-tools/os.ixx"
+	"os-tools/utils.ixx"
 
 	"os-tools/winapi.ixx"
 	"os-tools/winapi/aliases.ixx"

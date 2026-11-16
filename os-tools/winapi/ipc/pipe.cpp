@@ -1,5 +1,9 @@
 module;
-	#include <os-tools/winapi/deps.hpp>
+	#ifdef _WIN32
+		#include <os-tools/winapi/deps.hpp>
+		#include <os-tools/os_macro.hpp>
+		#include <cassert>
+	#endif
 module os.winapi;
 
 #ifdef _WIN32
@@ -52,6 +56,75 @@ std::pair< winapi::ipc::pipe, winapi::ipc::pipe >
 	return {pipe{read}, pipe{write}};
 }
 
+void winapi::ipc::pipe::set_traits(bool packet, bool nonblock)
+{
+	THROW_IF_ERR(set_traits, "failed to set pipe traits", packet, nonblock);
+}
+bool winapi::ipc::pipe::packet()
+{
+	THROW_IF_ERR_PROXY0(packet, "failed to get pipe traits");
+}
+void winapi::ipc::pipe::set_packet(bool packet)
+{
+	set_traits(packet, nonblock());
+}
+bool winapi::ipc::pipe::nonblock()
+{
+	THROW_IF_ERR_PROXY0(nonblock, "failed to get pipe traits");
+}
+void winapi::ipc::pipe::set_nonblock(bool nonblock)
+{
+	set_traits(packet(), nonblock);
+}
+
+bool winapi::ipc::pipe::set_traits(bool packet, bool nonblock, std::error_code& err) noexcept
+{
+	dword_t packetmode = 0;
+	if (packet) packetmode |= PIPE_READMODE_MESSAGE;
+	if (nonblock) packetmode |= PIPE_NOWAIT;
+	return process_error(winapi::calls::SetNamedPipeHandleState(native_.get(), &packetmode, nullptr, nullptr), err);
+}
+bool winapi::ipc::pipe::packet(std::error_code& err) noexcept
+{
+	dword_t packetmode = 0;
+	return process_error(winapi::calls::GetNamedPipeHandleStateA(native_.get(), &packetmode,
+					nullptr, 0, 0, nullptr, 0), err) && (packetmode & PIPE_READMODE_MESSAGE);
+}
+bool winapi::ipc::pipe::set_packet(bool packet, std::error_code& err) noexcept
+{
+	return set_traits(packet, nonblock(), err);
+}
+bool winapi::ipc::pipe::nonblock(std::error_code& err) noexcept
+{
+	dword_t packetmode = 0;
+	return process_error(winapi::calls::GetNamedPipeHandleStateA(native_.get(), &packetmode,
+					nullptr, nullptr, nullptr, nullptr, 0), err) && (packetmode & PIPE_NOWAIT);
+}
+bool winapi::ipc::pipe::set_nonblock(bool nonblock, std::error_code& err) noexcept
+{
+	return set_traits(packet(), nonblock, err);
+}
+
+std::string winapi::ipc::pipe::read()
+{
+	THROW_IF_ERR_PROXY0(read, "failed to read msg from pipe");
+}
+std::string winapi::ipc::pipe::read(std::error_code& err)
+{
+	std::string res;
+	while (true)
+	{
+		res.push_back('\0');
+		res.pop_back();
+		res.resize_and_overwrite(res.capacity(), [this, &err, pre = res.size()](char* str, std::size_t sz) {
+						std::span span{str + pre, sz - pre};
+						return pre + read(std::as_writable_bytes(span), err);
+					});
+		if (!err) return res;
+		break;
+	}
+	return res;
+}
 void winapi::ipc::pipe::write(std::string_view data)
 {
 	write(std::as_bytes(std::span< const char >(data.data(), data.size())));
@@ -68,6 +141,64 @@ std::size_t winapi::ipc::pipe::write_once(std::string_view data, std::error_code
 {
 	return write_once(std::as_bytes(std::span< const char >(data.data(), data.size())), err);;
 }
+void winapi::ipc::pipe::write(std::span< const std::byte > data)
+{
+	THROW_IF_ERR(write, "failed to write to pipe", data);
+}
+std::size_t winapi::ipc::pipe::write_once(std::span< const std::byte > data)
+{
+	THROW_IF_ERR_PROXY(write_once, "failed to write to pipe", data);
+}
+std::size_t winapi::ipc::pipe::read(std::span< std::byte > data)
+{
+	THROW_IF_ERR_PROXY(read, "failed to read from pipe", data);
+}
+std::size_t winapi::ipc::pipe::read_once(std::span< std::byte > data)
+{
+	THROW_IF_ERR_PROXY(read_once, "failed to read from pipe", data);
+}
+
+std::size_t winapi::ipc::pipe::write(std::span< const std::byte > data, std::error_code& err) noexcept
+{
+	std::size_t offset = 0;
+	while (offset < data.size())
+	{
+		offset += write_once(data.subspan(offset));
+		if (err == std::errc::broken_pipe) return offset;
+	}
+	return offset;
+}
+std::size_t winapi::ipc::pipe::write_once(std::span< const std::byte > data, std::error_code& err) noexcept
+{
+	constexpr dword_t max = std::numeric_limits< dword_t >::max();
+
+	dword_t written;
+	const dword_t size = (data.size() < max ? static_cast< dword_t >(data.size()) : max);
+	assert(native_);
+	process_error(winapi::calls::WriteFile(native_.get(), data.data(), size, &written, nullptr), err);
+	return static_cast< std::size_t >(written);
+}
+std::size_t winapi::ipc::pipe::read(std::span< std::byte > data, std::error_code& err) noexcept
+{
+	std::size_t offset = 0;
+	while (offset < data.size())
+	{
+		std::size_t delta = read_once(data.subspan(offset), err);
+		offset += delta;
+		if ((delta == 0) || static_cast< bool >(err)) return offset;
+	}
+	return offset;
+}
+std::size_t winapi::ipc::pipe::read_once(std::span< std::byte > data, std::error_code& err) noexcept
+{
+	constexpr dword_t max = std::numeric_limits< dword_t >::max();
+
+	dword_t read_count;
+	const dword_t size = (data.size() < max ? static_cast< dword_t >(data.size()) : max);
+	assert(native_);
+	process_error(winapi::calls::ReadFile(native_.get(), data.data(), size, &read_count, nullptr), err);
+	return static_cast< std::size_t >(read_count);
+}
 
 
 void winapi::ipc::named_pipe::flush()
@@ -79,7 +210,7 @@ void winapi::ipc::named_pipe::flush()
 bool winapi::ipc::named_pipe::flush(std::error_code& err) noexcept
 {
 	process_error(winapi::calls::FlushFileBuffers(native_.get()), err);
-	return static_cast< bool >(err);
+	return !static_cast< bool >(err);
 }
 void winapi::ipc::named_pipe::connect()
 {
@@ -91,7 +222,7 @@ bool winapi::ipc::named_pipe::connect(std::error_code& err) noexcept
 {
 	process_error(winapi::calls::ConnectNamedPipe(native_.get(), nullptr), err);
 	if (err.value() == ERROR_PIPE_CONNECTED) err.clear();
-	return static_cast< bool >(err);
+	return !static_cast< bool >(err);
 }
 
 winapi::ipc::named_pipe winapi::ipc::create_server_pipe(string name, openmode mode)
@@ -124,17 +255,17 @@ winapi::ipc::named_pipe winapi::ipc::create_server_pipe(const named_pipe::initia
 winapi::ipc::named_pipe winapi::ipc::create_server_pipe(const named_pipe::initial_params& params, string name,
 			std::error_code& err) noexcept
 {
-	dword_t mode = 0;
+	dword_t mode = WRITE_OWNER | WRITE_DAC | ACCESS_SYSTEM_SECURITY;
 	switch (params.mode)
 	{
 	case openmode::in:
-		mode = PIPE_ACCESS_INBOUND;
+		mode |= PIPE_ACCESS_INBOUND;
 		break;
 	case openmode::out:
-		mode = PIPE_ACCESS_OUTBOUND;
+		mode |= PIPE_ACCESS_OUTBOUND;
 		break;
 	case openmode::inout:
-		mode = PIPE_ACCESS_DUPLEX;
+		mode |= PIPE_ACCESS_DUPLEX;
 		break;
 	}
 	if (params.prevent_open_existing) mode |= FILE_FLAG_FIRST_PIPE_INSTANCE;
@@ -206,10 +337,6 @@ winapi::ipc::named_pipe winapi::ipc::open_client_pipe(const named_pipe::open_par
 	dword_t attr_flags = (params.overlapped ? FILE_FLAG_OVERLAPPED : FILE_ATTRIBUTE_NORMAL);
 	if (params.overlapped) mode |= FILE_FLAG_OVERLAPPED;
 
-	dword_t packetmode = 0;
-	if (params.packet) packetmode |= PIPE_READMODE_MESSAGE;
-	if (params.nonblock) packetmode |= PIPE_NOWAIT;
-
 	security_attributes_t attributes{
 				.nLength = sizeof(security_attributes_t),
 				.lpSecurityDescriptor = params.security_descriptor,
@@ -217,14 +344,14 @@ winapi::ipc::named_pipe winapi::ipc::open_client_pipe(const named_pipe::open_par
 			};
 
 	name.insert(0, L"\\\\.\\pipe\\LOCAL\\");
-	unique_handle h{winapi::calls::CreateFileW(name.c_str(), mode, 0, &attributes, OPEN_EXISTING,
+	named_pipe result{winapi::calls::CreateFileW(name.c_str(), mode, 0, &attributes, OPEN_EXISTING,
 					attr_flags, nullptr)};
-	process_error(h, err);
-	if (h && (packetmode != 0))
+	process_error(result, err);
+	if (result)
 	{
-		process_error(winapi::calls::SetNamedPipeHandleState(h.get(), &packetmode, nullptr, nullptr), err);
+		result.set_traits(params.packet, params.nonblock, err);
 	}
-	return {std::move(h)};
+	return result;
 }
 
 winapi::ipc::named_pipe winapi::ipc::create_server_pipe(std::string name, openmode mode)
@@ -257,17 +384,17 @@ winapi::ipc::named_pipe winapi::ipc::create_server_pipe(const named_pipe::initia
 winapi::ipc::named_pipe winapi::ipc::create_server_pipe(const named_pipe::initial_params& params, std::string name,
 			std::error_code& err) noexcept
 {
-	dword_t mode = 0;
+	dword_t mode = WRITE_OWNER | WRITE_DAC;
 	switch (params.mode)
 	{
 	case openmode::in:
-		mode = PIPE_ACCESS_INBOUND;
+		mode |= PIPE_ACCESS_INBOUND;
 		break;
 	case openmode::out:
-		mode = PIPE_ACCESS_OUTBOUND;
+		mode |= PIPE_ACCESS_OUTBOUND;
 		break;
 	case openmode::inout:
-		mode = PIPE_ACCESS_DUPLEX;
+		mode |= PIPE_ACCESS_DUPLEX;
 		break;
 	}
 	if (params.prevent_open_existing) mode |= FILE_FLAG_FIRST_PIPE_INSTANCE;
@@ -349,13 +476,13 @@ winapi::ipc::named_pipe winapi::ipc::open_client_pipe(const named_pipe::open_par
 			};
 
 	name.insert(0, "\\\\.\\pipe\\LOCAL\\");
-	unique_handle h{winapi::calls::CreateFileA(name.c_str(), mode, 0, &attributes, OPEN_EXISTING,
+	named_pipe result{winapi::calls::CreateFileA(name.c_str(), mode, 0, &attributes, OPEN_EXISTING,
 					attr_flags, nullptr)};
-	process_error(h, err);
-	if (h && (packetmode != 0))
+	process_error(result, err);
+	if (result)
 	{
-		process_error(winapi::calls::SetNamedPipeHandleState(h.get(), &packetmode, nullptr, nullptr), err);
+		result.set_traits(params.packet, params.nonblock, err);
 	}
-	return {std::move(h)};
+	return result;
 }
 #endif

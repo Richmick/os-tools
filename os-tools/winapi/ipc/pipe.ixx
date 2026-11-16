@@ -1,7 +1,3 @@
-module;
-	#ifdef _WIN32
-		#include <cassert>
-	#endif
 export module os.winapi:pipe;
 
 #ifdef _WIN32
@@ -18,29 +14,33 @@ export namespace winapi::ipc
 
 		using handle_container_base::handle_container_base;
 
-		template< std::size_t N = std::dynamic_extent >
-		void write(std::span< const std::byte, N > data);
+		void set_traits(bool packet, bool nonblock);
+		bool packet();
+		void set_packet(bool packet);
+		bool nonblock();
+		void set_nonblock(bool nonblock);
+
+		bool set_traits(bool packet, bool nonblock, std::error_code& err) noexcept;
+		bool packet(std::error_code& err) noexcept;
+		bool set_packet(bool packet, std::error_code& err) noexcept;
+		bool nonblock(std::error_code& err) noexcept;
+		bool set_nonblock(bool nonblock, std::error_code& err) noexcept;
+
+		std::string read();
+		std::size_t read(std::span< std::byte > data);
+		std::size_t read_once(std::span< std::byte > data);
 		void write(std::string_view data);
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t write_once(std::span< const std::byte, N > data);
+		void write(std::span< const std::byte > data);
 		std::size_t write_once(std::string_view data);
+		std::size_t write_once(std::span< const std::byte > data);
 
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t write(std::span< const std::byte, N > data, std::error_code& err) noexcept;
+		std::string read(std::error_code& err);
+		std::size_t read(std::span< std::byte > data, std::error_code& err) noexcept;
+		std::size_t read_once(std::span< std::byte > data, std::error_code& err) noexcept;
 		std::size_t write(std::string_view data, std::error_code& err) noexcept;
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t write_once(std::span< const std::byte, N > data, std::error_code& err) noexcept;
+		std::size_t write(std::span< const std::byte > data, std::error_code& err) noexcept;
 		std::size_t write_once(std::string_view data, std::error_code& err) noexcept;
-
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t read(std::span< std::byte, N > data);
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t read_once(std::span< std::byte, N > data);
-
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t read(std::span< std::byte, N > data, std::error_code& err) noexcept;
-		template< std::size_t N = std::dynamic_extent >
-		std::size_t read_once(std::span< std::byte, N > data, std::error_code& err) noexcept;
+		std::size_t write_once(std::span< const std::byte > data, std::error_code& err) noexcept;
 	};
 	std::pair< pipe, pipe > create_pipe();
 	std::pair< pipe, pipe > create_pipe(std::error_code& err) noexcept;
@@ -131,83 +131,4 @@ struct winapi::ipc::named_pipe::open_params
 	bool overlapped = false;
 	void* security_descriptor = nullptr;
 };
-
-
-template< std::size_t N >
-void winapi::ipc::pipe::write(std::span< const std::byte, N > data)
-{
-	std::error_code err;
-	write(data, err);
-	throw_on_error(err, "failed to write to pipe");
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::write_once(std::span< const std::byte, N > data)
-{
-	std::error_code err;
-	std::size_t result = write_once(data, err);
-	throw_on_error(err, "failed to write to pipe");
-	return result;
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::read(std::span< std::byte, N > data)
-{
-	std::error_code err;
-	std::size_t result = read(data, err);
-	throw_on_error(err, "failed to read from pipe");
-	return result;
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::read_once(std::span< std::byte, N > data)
-{
-	std::error_code err;
-	std::size_t result = read_once(data, err);
-	throw_on_error(err, "failed to read from pipe");
-	return result;
-}
-
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::write(std::span< const std::byte, N > data, std::error_code& err) noexcept
-{
-	std::size_t offset = 0;
-	while (offset < data.size())
-	{
-		offset += write_once(data.subspan(offset));
-		if (err == std::errc::broken_pipe) return offset;
-	}
-	return offset;
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::write_once(std::span< const std::byte, N > data, std::error_code& err) noexcept
-{
-	constexpr dword_t max = std::numeric_limits< dword_t >::max();
-
-	dword_t written;
-	const dword_t size = (data.size() < max ? static_cast< dword_t >(data.size()) : max);
-	assert(native_);
-	process_error(winapi::calls::WriteFile(native_.get(), data.data(), size, &written, nullptr), err);
-	return static_cast< std::size_t >(written);
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::read(std::span< std::byte, N > data, std::error_code& err) noexcept
-{
-	std::size_t offset = 0;
-	while (offset < data.size())
-	{
-		std::size_t delta = read_once(data.subspan(offset), err);
-		offset += delta;
-		if ((delta == 0) || static_cast< bool >(err)) return offset;
-	}
-	return offset;
-}
-template< std::size_t N >
-std::size_t winapi::ipc::pipe::read_once(std::span< std::byte, N > data, std::error_code& err) noexcept
-{
-	constexpr dword_t max = std::numeric_limits< dword_t >::max();
-
-	dword_t read_count;
-	const dword_t size = (data.size() < max ? static_cast< dword_t >(data.size()) : max);
-	assert(native_);
-	process_error(winapi::calls::ReadFile(native_.get(), data.data(), size, &read_count, nullptr), err);
-	return static_cast< std::size_t >(read_count);
-}
 #endif

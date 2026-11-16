@@ -9,6 +9,12 @@
 	#define EXE_EXTENSION ""
 #endif
 
+#ifdef _WIN32
+	#define __OS_NAMESPACE ::winapi
+#elifdef __linux__
+	#define __OS_NAMESPACE ::linapi
+#endif
+
 #define THROW_IF_ERR(func, msg, ...) \
 	std::error_code err; \
 	func(__VA_ARGS__, err); \

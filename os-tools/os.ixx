@@ -1,12 +1,12 @@
+module;
+	#include <os-tools/os_macro.hpp>
 export module os;
 
 export import os.argv_parser;
 
 #ifdef _WIN32
-	#define __OS_NAMESPACE ::winapi
 	export import os.winapi;
 #elifdef __linux__
-	#define __OS_NAMESPACE ::linapi
 	export import os.linapi;
 #endif
 
@@ -36,6 +36,8 @@ export namespace os
 	using __OS_NAMESPACE::throw_on_error;
 
 	using __OS_NAMESPACE::is_blank;
+	using __OS_NAMESPACE::empty_handle;
+	using __OS_NAMESPACE::empty_socket;
 
 	using __OS_NAMESPACE::thread;
 	using __OS_NAMESPACE::process;
@@ -46,8 +48,8 @@ export namespace os
 		using __OS_NAMESPACE::this_thread::get_process_id;
 		using __OS_NAMESPACE::this_thread::get_priority;
 		using __OS_NAMESPACE::this_thread::set_priority;
-		//using __OS_NAMESPACE::this_thread::get_ideal_processor;
-		//using __OS_NAMESPACE::this_thread::set_ideal_processor;
+		using __OS_NAMESPACE::this_thread::get_ideal_processor;
+		using __OS_NAMESPACE::this_thread::set_ideal_processor;
 	}
 	namespace this_process
 	{
@@ -89,15 +91,23 @@ export namespace os
 		using __OS_NAMESPACE::net::lib_anchor;
 
 		using __OS_NAMESPACE::net::protocol;
-		using __OS_NAMESPACE::net::address;
+		using __OS_NAMESPACE::net::address_type;
+		using __OS_NAMESPACE::net::address_link;
+		using __OS_NAMESPACE::net::const_address_link;
+		using __OS_NAMESPACE::net::address_traits;
+		using __OS_NAMESPACE::net::type_of;
+
+		using __OS_NAMESPACE::net::address_any;
+		using __OS_NAMESPACE::net::address_ipv4;
+		using __OS_NAMESPACE::net::address_ipv6;
 		using __OS_NAMESPACE::net::socket;
 	}
 	namespace numa
 	{
-		/*using __OS_NAMESPACE::numa::node;
+		using __OS_NAMESPACE::numa::node;
 		using __OS_NAMESPACE::numa::processor;
 		using __OS_NAMESPACE::numa::cpu_set;
-		using __OS_NAMESPACE::numa::cpu_set_info;*/
+		using __OS_NAMESPACE::numa::cpu_set_info;
 	}
 
 	/*using __OS_NAMESPACE::counting_semaphore;

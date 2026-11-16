@@ -177,6 +177,8 @@ export namespace winapi
 		using ::CreatePipe;
 		using ::CreateNamedPipeA;
 		using ::CreateNamedPipeW;
+		using ::GetNamedPipeHandleStateA;
+		using ::GetNamedPipeHandleStateW;
 		using ::SetNamedPipeHandleState;
 		using ::ConnectNamedPipe;
 		using ::FlushFileBuffers;
@@ -213,7 +215,7 @@ export namespace winapi
 	std::system_error last_error(const std::string& msg);
 	void throw_on_error(std::error_code err, const char* msg);
 	void throw_on_error(std::error_code err, const std::string& msg);
-	void process_error(bool success, std::error_code& err) noexcept;
+	bool process_error(bool success, std::error_code& err) noexcept;
 	handle_t process_error(handle_t res, std::error_code& err) noexcept;
 
 	void wait(handle_t h);
