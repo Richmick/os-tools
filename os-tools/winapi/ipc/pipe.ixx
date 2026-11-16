@@ -171,7 +171,7 @@ std::size_t winapi::ipc::pipe::write(std::span< const std::byte, N > data, std::
 	std::size_t offset = 0;
 	while (offset < data.size())
 	{
-		offset += write_once(data.subspan(offset));
+		offset += write_once(data.subspan(offset), err);
 		if (err == std::errc::broken_pipe) return offset;
 	}
 	return offset;

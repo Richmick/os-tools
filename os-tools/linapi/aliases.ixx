@@ -9,6 +9,7 @@ module;
 		#include <sys/eventfd.h>
 		#include <sys/resource.h>
 		#include <fcntl.h>
+		#include <os-tools/linapi/feature_test.hpp>
 	#endif
 export module os.linapi:aliases;
 
@@ -71,6 +72,8 @@ export namespace linapi
 
 	namespace calls
 	{
+		constexpr bool has_closefrom = os::evaluate_check_v< int, details::closefrom_check_template >;
+
 		using ::readlink;
 		// Handles
 		using ::read;
@@ -81,7 +84,6 @@ export namespace linapi
 		using ::dup3;
 		using ::fcntl;
 		using ::getrlimit;
-		using ::closefrom;
 
 		// Process
 		using ::getpid;

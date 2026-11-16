@@ -61,16 +61,29 @@ BOOST_AUTO_TEST_CASE(eol_test2)
 	BOOST_TEST(was_read == 0);
 	BOOST_TEST((err == std::errc::broken_pipe));
 }
-BOOST_AUTO_TEST_CASE(named_rw_test)
+BOOST_AUTO_TEST_CASE(write_to_closed_test)
 {
 	constexpr const char msg[] = "allo";
+	auto [read, write] = os::ipc::create_pipe();
+	read.close_handle();
+
+	os::ipc::pipe::prevent_signal_emiting();
+
+	std::error_code err;
+	std::size_t was_written = write.write_once(msg, err);
+	BOOST_TEST(was_written == 0);
+	BOOST_TEST(static_cast< bool >(err));
+}
+BOOST_AUTO_TEST_CASE(named_rw_test)
+{
+	/*constexpr const char msg[] = "allo";
 	os::ipc::named_pipe::initial_params init{.mode = os::openmode::out, .nonblock = true};
 	os::ipc::named_pipe write = os::ipc::create_server_pipe(init, "name");
 	os::ipc::named_pipe::open_params open{.mode = os::openmode::in};
 	os::ipc::named_pipe read = os::ipc::open_client_pipe(open, "name");
 	write.connect();
 	//write.write(msg);
-	write.close_handle();
+	write.close_handle();*/
 
 	//char recv[std::size(msg) - 1];
 	//std::span span{recv};

@@ -13,6 +13,10 @@
 	std::error_code err; \
 	func(__VA_ARGS__, err); \
 	if (err) throw std::system_error{err, msg}
+#define THROW_IF_ERR0(func, msg) \
+	std::error_code err; \
+	func(err); \
+	if (err) throw std::system_error{err, msg}
 #define THROW_IF_ERR_CTOR(type, msg, ...) \
 	std::error_code err; \
 	*this = type{__VA_ARGS__, err}; \

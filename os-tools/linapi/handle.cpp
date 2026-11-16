@@ -1,6 +1,7 @@
 module;
 	#ifdef __linux__
 		#include <fcntl.h>
+		#include <os-tools/os_macro.hpp>
 	#endif
 module os.linapi;
 
@@ -13,15 +14,24 @@ bool linapi::is_blank(handle_t h) noexcept
 }
 void linapi::set_inheritance(inheritmode inherit, handle_t h)
 {
-	std::error_code err;
-	set_inheritance(inherit, h, err);
-	throw_on_error(err, "failed to set handle inheritance");
+	THROW_IF_ERR(set_inheritance, "failed to set handle inheritance", inherit, h);
 }
 bool linapi::set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept
 {
 	constexpr int flag = FD_CLOEXEC;
 	process_error(linapi::calls::fcntl(h, F_SETFD, (inherit == inheritmode::all ? 0 : flag)) != -1, err);
 	return !static_cast< bool >(err);
+}
+linapi::inheritmode linapi::get_inheritance(handle_t h)
+{
+	THROW_IF_ERR_PROXY(get_inheritance, "failed to get handle inheritance", h);
+}
+linapi::inheritmode linapi::get_inheritance(handle_t h, std::error_code& err) noexcept
+{
+	constexpr int flag = FD_CLOEXEC;
+	int result = linapi::calls::fcntl(h, F_GETFD);
+	process_error(result != -1, err);
+	return static_cast< inheritmode >(static_cast< bool >(result & flag));
 }
 
 linapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:
@@ -85,6 +95,14 @@ bool linapi::unique_handle::disable_inheritance(std::error_code& err) const noex
 	set_inheritance(inheritmode::none, native_, err);
 	return static_cast< bool >(err);
 }
+linapi::inheritmode linapi::unique_handle::inheritance() const
+{
+	return linapi::get_inheritance(native_);
+}
+linapi::inheritmode linapi::unique_handle::inheritance(std::error_code& err) const noexcept
+{
+	return linapi::get_inheritance(native_, err);
+}
 
 linapi::unique_handle::operator bool() const noexcept
 {
@@ -140,6 +158,14 @@ bool linapi::handle_container_base::enable_handle_inheritance(std::error_code& e
 bool linapi::handle_container_base::disable_handle_inheritance(std::error_code& err) const noexcept
 {
 	return native_.disable_inheritance(err);
+}
+linapi::inheritmode linapi::handle_container_base::handle_inheritance() const
+{
+	return native_.inheritance();
+}
+linapi::inheritmode linapi::handle_container_base::handle_inheritance(std::error_code& err) const noexcept
+{
+	return native_.inheritance(err);
 }
 
 void std::swap(linapi::unique_handle& lhs, linapi::unique_handle& rhs) noexcept

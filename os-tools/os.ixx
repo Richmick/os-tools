@@ -73,7 +73,10 @@ export namespace os
 			using __OS_NAMESPACE::ipc::signal::type;
 			using __OS_NAMESPACE::ipc::signal::interrupt;
 			using __OS_NAMESPACE::ipc::signal::terminate;
+
 			using __OS_NAMESPACE::ipc::signal::send;
+			using __OS_NAMESPACE::ipc::signal::ignore;
+			using __OS_NAMESPACE::ipc::signal::restore_default;
 		}
 		using __OS_NAMESPACE::ipc::pipe;
 		using __OS_NAMESPACE::ipc::create_pipe;
@@ -86,11 +89,11 @@ export namespace os
 	}
 	namespace net
 	{
-		using __OS_NAMESPACE::net::lib_anchor;
+		/*using __OS_NAMESPACE::net::lib_anchor;
 
 		using __OS_NAMESPACE::net::protocol;
 		using __OS_NAMESPACE::net::address;
-		using __OS_NAMESPACE::net::socket;
+		using __OS_NAMESPACE::net::socket;*/
 	}
 	namespace numa
 	{
