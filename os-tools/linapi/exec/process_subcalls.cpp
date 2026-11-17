@@ -51,7 +51,7 @@ linapi::process::native_handle_type linapi::process::create(const char* app, cha
 	process_handle_t h = linapi::calls::fork();
 	if (h == 0)
 	{
-		//linapi::calls::closefrom(this_process::stderr() + 1);
+		this_process::closefrom< handle_t >(this_process::stderr() + 1);
 		linapi::calls::execv(app, argv);
 		linapi::calls::_exit(-1);
 	}
@@ -80,7 +80,7 @@ linapi::process::native_handle_type linapi::process::create(initial_params& para
 		}
 		if (params.inherit_handles == inheritmode::none)
 		{
-			//linapi::calls::closefrom(this_process::stderr() + 1);
+			this_process::closefrom< handle_t >(this_process::stderr() + 1);
 		}
 		linapi::calls::execv(app, argv);
 		linapi::calls::_exit(-1);

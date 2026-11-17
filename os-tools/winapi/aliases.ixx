@@ -1,8 +1,5 @@
 module;
-	#ifdef _WIN32
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
-	#endif
+	#include <os-tools/winapi/deps.hpp>
 export module os.winapi:aliases;
 
 #ifdef _WIN32
@@ -19,7 +16,7 @@ export namespace winapi
 		none = false,
 		all = true
 	};
-	enum class openmode
+	enum class openmode: std::uint8_t
 	{
 		closed, in, out, inout
 	};
@@ -95,6 +92,7 @@ export namespace winapi
 		// Handles
 		using ::CloseHandle;
 		using ::SetHandleInformation;
+		using ::GetHandleInformation;
 		using ::GetStdHandle;
 
 		// Process
@@ -168,13 +166,24 @@ export namespace winapi
 		using ::WakeConditionVariable;
 
 		// Files
+		using ::CreateFileA;
+		using ::CreateFileW;
 		using ::ReadFile;
 		using ::ReadFileEx;
 		using ::WriteFile;
 		using ::WriteFileEx;
+		using ::MapViewOfFile;
+		using ::UnmapViewOfFile;
 
 		// Pipes
 		using ::CreatePipe;
+		using ::CreateNamedPipeA;
+		using ::CreateNamedPipeW;
+		using ::GetNamedPipeHandleStateA;
+		using ::GetNamedPipeHandleStateW;
+		using ::SetNamedPipeHandleState;
+		using ::ConnectNamedPipe;
+		using ::FlushFileBuffers;
 
 		// Events
 		using ::CreateEventA;
@@ -208,7 +217,7 @@ export namespace winapi
 	std::system_error last_error(const std::string& msg);
 	void throw_on_error(std::error_code err, const char* msg);
 	void throw_on_error(std::error_code err, const std::string& msg);
-	void process_error(bool success, std::error_code& err) noexcept;
+	bool process_error(bool success, std::error_code& err) noexcept;
 	handle_t process_error(handle_t res, std::error_code& err) noexcept;
 
 	void wait(handle_t h);

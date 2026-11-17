@@ -1,8 +1,7 @@
 module;
 	#ifdef _WIN32
 		#include <atomic>
-		#define WIN32_LEAN_AND_MEAN
-		#include <windows.h>
+		#include <os-tools/winapi/deps.hpp>
 	#endif
 export module os.winapi:thread;
 

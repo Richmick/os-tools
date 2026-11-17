@@ -1,12 +1,12 @@
+module;
+	#include <os-tools/os_macro.hpp>
 export module os;
 
 export import os.argv_parser;
 
 #ifdef _WIN32
-	#define __OS_NAMESPACE ::winapi
 	export import os.winapi;
 #elifdef __linux__
-	#define __OS_NAMESPACE ::linapi
 	export import os.linapi;
 #endif
 
@@ -25,6 +25,7 @@ export namespace os
 	using __OS_NAMESPACE::int_handle_t;
 	using __OS_NAMESPACE::unique_handle;
 	using __OS_NAMESPACE::set_inheritance;
+	using __OS_NAMESPACE::get_inheritance;
 
 	using __OS_NAMESPACE::make_empty_t;
 	using __OS_NAMESPACE::make_empty;
@@ -35,9 +36,14 @@ export namespace os
 	using __OS_NAMESPACE::throw_on_error;
 
 	using __OS_NAMESPACE::is_blank;
+	using __OS_NAMESPACE::empty_handle;
+	//using __OS_NAMESPACE::empty_socket;
 
 	using __OS_NAMESPACE::thread;
 	using __OS_NAMESPACE::process;
+
+	using __OS_NAMESPACE::file_mapping;
+	using __OS_NAMESPACE::mapped_memory;
 	namespace this_thread
 	{
 		using __OS_NAMESPACE::this_thread::native_handle;
@@ -72,12 +78,37 @@ export namespace os
 			using __OS_NAMESPACE::ipc::signal::type;
 			using __OS_NAMESPACE::ipc::signal::interrupt;
 			using __OS_NAMESPACE::ipc::signal::terminate;
+
 			using __OS_NAMESPACE::ipc::signal::send;
+			using __OS_NAMESPACE::ipc::signal::ignore;
+			using __OS_NAMESPACE::ipc::signal::restore_default;
 		}
 		using __OS_NAMESPACE::ipc::pipe;
 		using __OS_NAMESPACE::ipc::create_pipe;
 
+		using __OS_NAMESPACE::ipc::named_pipe;
+		using __OS_NAMESPACE::ipc::create_server_pipe;
+		using __OS_NAMESPACE::ipc::open_client_pipe;
+
 		using __OS_NAMESPACE::ipc::event;
+
+		//using __OS_NAMESPACE::ipc::create_shared_memory;
+	}
+	namespace net
+	{
+		/*using __OS_NAMESPACE::net::lib_anchor;
+
+		using __OS_NAMESPACE::net::protocol;
+		using __OS_NAMESPACE::net::address_type;
+		using __OS_NAMESPACE::net::address_link;
+		using __OS_NAMESPACE::net::const_address_link;
+		using __OS_NAMESPACE::net::address_traits;
+		using __OS_NAMESPACE::net::type_of;
+
+		using __OS_NAMESPACE::net::address_any;
+		using __OS_NAMESPACE::net::address_ipv4;
+		using __OS_NAMESPACE::net::address_ipv6;
+		using __OS_NAMESPACE::net::socket;*/
 	}
 	namespace numa
 	{

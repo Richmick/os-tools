@@ -15,6 +15,7 @@ set(cxx_sources
 	"thread-test.cpp"
 	"process-test.cpp"
 	"pipe-test.cpp"
+	#"net-test.cpp"
 	#"numa-test.cpp"
 )
 set(cxx_modules)

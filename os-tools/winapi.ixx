@@ -2,6 +2,7 @@ export module os.winapi;
 
 export import :aliases;
 export import :handle;
+export import :mapping;
 
 // Exec
 export import :thread;
@@ -16,6 +17,11 @@ export import :condition_variable;
 export import :pipe;
 export import :signal;
 export import :event;
+export import :shared_memory;
+
+/// Net
+export import :net_aliases;
+export import :socket;
 
 // Numa
 export import :numa_nodes;

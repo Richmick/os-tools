@@ -18,6 +18,8 @@ export namespace linapi
 	bool is_blank(handle_t h) noexcept;
 	void set_inheritance(inheritmode inherit, handle_t h);
 	bool set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept;
+	inheritmode get_inheritance(handle_t h);
+	inheritmode get_inheritance(handle_t h, std::error_code& err) noexcept;
 }
 export namespace std
 {
@@ -49,6 +51,8 @@ public:
 	bool enable_inheritance(std::error_code& err) const noexcept;
 	void disable_inheritance() const;
 	bool disable_inheritance(std::error_code& err) const noexcept;
+	inheritmode inheritance() const;
+	inheritmode inheritance(std::error_code& err) const noexcept;
 
 	operator bool() const noexcept;
 
@@ -77,6 +81,9 @@ public:
 	bool enable_handle_inheritance(std::error_code& err) const noexcept;
 	void disable_handle_inheritance() const;
 	bool disable_handle_inheritance(std::error_code& err) const noexcept;
+
+	inheritmode handle_inheritance() const;
+	inheritmode handle_inheritance(std::error_code& err) const noexcept;
 
 protected:
 	unique_handle native_;

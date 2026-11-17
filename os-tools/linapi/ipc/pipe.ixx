@@ -1,6 +1,7 @@
 module;
 	#ifdef __linux__
 		#include <cassert>
+		#include <cerrno>
 		#include <cstddef>
 		#include <span>
 		#include <string_view>
@@ -20,6 +21,9 @@ export namespace linapi::ipc
 		struct initial_params;
 
 		using handle_container_base::handle_container_base;
+
+		static void prevent_signal_emiting();
+		static bool prevent_signal_emiting(std::error_code& err) noexcept;
 
 		template< std::size_t N = std::dynamic_extent >
 		void write(std::span< const std::byte, N > data);
@@ -45,15 +49,6 @@ export namespace linapi::ipc
 		template< std::size_t N = std::dynamic_extent >
 		std::size_t read_once(std::span< std::byte, N > data, std::error_code& err) noexcept;
 	};
-	class resource_anchor
-	{
-	public:
-		path name;
-
-		resource_anchor() = default;
-		resource_anchor(resource_anchor&&) = default;
-		~resource_anchor();
-	};
 
 	std::pair< pipe, pipe > create_pipe();
 	std::pair< pipe, pipe > create_pipe(std::error_code& err) noexcept;
@@ -62,7 +57,38 @@ export namespace linapi::ipc
 	std::pair< pipe, pipe > create_pipe(const pipe::initial_params& params);
 	std::pair< pipe, pipe > create_pipe(const pipe::initial_params& params, std::error_code& err) noexcept;
 
-	std::pair< pipe, resource_anchor > create_server_pipe(path name, openmode mode);
+	class named_pipe: public pipe
+	{
+	public:
+		path name;
+		struct initial_params;
+		struct open_params;
+
+		using pipe::pipe; // handle_container_base constructors
+
+		void flush();
+		bool flush(std::error_code& err) noexcept;
+		void connect();
+		bool connect(std::error_code& err) noexcept;
+	};
+
+	named_pipe create_server_pipe(string name, openmode mode);
+	named_pipe create_server_pipe(string name, openmode mode, std::error_code& err) noexcept;
+	named_pipe create_server_pipe(string name, openmode mode, inheritmode inherit);
+	named_pipe create_server_pipe(string name, openmode mode, inheritmode inherit,
+		std::error_code& err) noexcept;
+	named_pipe create_server_pipe(const named_pipe::initial_params& params, string name);
+	named_pipe create_server_pipe(const named_pipe::initial_params& params, string name,
+		std::error_code& err) noexcept;
+
+	named_pipe open_client_pipe(string name, openmode mode);
+	named_pipe open_client_pipe(string name, openmode mode, std::error_code& err) noexcept;
+	named_pipe open_client_pipe(string name, openmode mode, inheritmode inherit);
+	named_pipe open_client_pipe(string name, openmode mode, inheritmode inherit,
+		std::error_code& err) noexcept;
+	named_pipe open_client_pipe(const named_pipe::open_params& params, string name);
+	named_pipe open_client_pipe(const named_pipe::open_params& params, string name,
+		std::error_code& err) noexcept;
 }
 
 struct linapi::ipc::pipe::initial_params
@@ -71,6 +97,23 @@ struct linapi::ipc::pipe::initial_params
 	bool nonblock = false;
 	bool packet = false;
 	[[maybe_unused]] std::size_t size_hint = 0;
+};
+struct linapi::ipc::named_pipe::initial_params
+{
+	openmode mode = openmode::inout;
+	inheritmode inherit = inheritmode::none;
+	bool nonblock = false;
+	bool packet = false;
+	bool prevent_open_existing = true;
+	[[maybe_unused]] std::size_t read_size_hint = 0;
+	[[maybe_unused]] std::size_t write_size_hint = 0;
+};
+struct linapi::ipc::named_pipe::open_params
+{
+	openmode mode = openmode::inout;
+	inheritmode inherit = inheritmode::none;
+	bool nonblock = false;
+	bool packet = false;
 };
 
 
@@ -123,7 +166,7 @@ std::size_t linapi::ipc::pipe::write_once(std::span< const std::byte, N > data, 
 	assert(native_);
 	std::ptrdiff_t written = linapi::calls::write(native_.get(), data.data(), data.size());
 	process_error(written >= 0, err);
-	return static_cast< std::size_t >(written);
+	return static_cast< std::size_t >(std::max(written, static_cast< std::ptrdiff_t >(0)));
 }
 template< std::size_t N >
 std::size_t linapi::ipc::pipe::read(std::span< std::byte, N > data, std::error_code& err) noexcept
@@ -143,6 +186,7 @@ std::size_t linapi::ipc::pipe::read_once(std::span< std::byte, N > data, std::er
 	assert(native_);
 	std::ptrdiff_t read_count = linapi::calls::read(native_.get(), data.data(), data.size());
 	process_error(read_count >= 0, err);
-	return static_cast< std::size_t >(read_count);
+	if (read_count == 0) err.assign(EPIPE, std::system_category());
+	return static_cast< std::size_t >(std::max(read_count, static_cast< std::ptrdiff_t >(0)));
 }
 #endif

@@ -10,6 +10,7 @@ module;
 		#include <vector>
 		#include <unistd.h>
 		#include <sys/wait.h>
+		#include <os-tools/linapi/feature_test.hpp>
 	#endif
 export module os.linapi:process;
 
@@ -148,6 +149,9 @@ export namespace linapi
 		handle_t stderr(std::error_code& err) noexcept;
 		handle_t std_handle(io type) noexcept;
 		handle_t std_handle(io type, std::error_code& err) noexcept;
+
+		template< class T = handle_t >
+		void closefrom(T start_from = 3);
 	}
 }
 namespace std
@@ -167,4 +171,25 @@ struct linapi::process::initial_params
 	handle_t stderr = empty_handle;
 };
 
+template< class T >
+void linapi::this_process::closefrom(T start_from)
+{
+	if constexpr (os::evaluate_check_v< T, details::closefrom_check_template >)
+	{
+		::closefrom(start_from);
+	}
+	else
+	{
+		int end_at = 10'000;
+		/*linapi::rlimit_t lim;
+		if (linapi::calls::getrlimit(RLIMIT_NOFILE, &lim) >= 0)
+			end_at = lim.rlim_cur;
+
+		for (h = end_at; h >= start_from; h--)
+		{
+			if (linapi::calls::fcntl(h, F_GETFD, 0) < 0) continue;
+			linapi::calls::close(h);
+		}*/
+	}
+}
 #endif
