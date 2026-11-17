@@ -14,6 +14,11 @@ export namespace winapi::ipc
 
 		using handle_container_base::handle_container_base;
 
+		/// Linapi compatability
+		static void prevent_signal_emiting() noexcept;
+		/// Linapi compatability
+		static bool prevent_signal_emiting(std::error_code& err) noexcept;
+
 		void set_traits(bool packet, bool nonblock);
 		bool packet();
 		void set_packet(bool packet);

@@ -22,6 +22,10 @@ export namespace linapi::ipc::signal
 		child_exit = SIGCHLD
 	};
 
+	void ignore(type t);
+	bool ignore(type t, std::error_code& err) noexcept;
+	void restore_default(type t);
+	bool restore_default(type t, std::error_code& err) noexcept;
 	/// Add callback to process' list
 	void register_callback(callback cb, type t);
 	/// Add callback to process' list

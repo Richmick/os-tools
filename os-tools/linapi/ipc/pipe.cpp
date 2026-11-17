@@ -1,6 +1,7 @@
 module;
 	#ifdef __linux__
 		#include <fcntl.h>
+		#include <os-tools/os_macro.hpp>
 	#endif
 module os.linapi;
 
@@ -51,6 +52,15 @@ std::pair< linapi::ipc::pipe, linapi::ipc::pipe >
 	}
 	err.clear();
 	return {pipe{read_write[0]}, pipe{read_write[1]}};
+}
+
+void linapi::ipc::pipe::prevent_signal_emiting()
+{
+	THROW_IF_ERR0(prevent_signal_emiting, "failed to ignore sigpipe");
+}
+bool linapi::ipc::pipe::prevent_signal_emiting(std::error_code & err) noexcept
+{
+	return signal::ignore(signal::broken_pipe, err);
 }
 
 void linapi::ipc::pipe::write(std::string_view data)

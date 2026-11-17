@@ -20,13 +20,17 @@ export namespace winapi::ipc::signal
 
 	/// Add callback to process' list
 	void register_callback(callback cb);
-	/// Remove callback from process' list
-	void remove_callback(callback cb);
-
 	/// Add callback to process' list
 	bool register_callback(callback cb, std::error_code& err) noexcept;
 	/// Remove callback from process' list
+	void remove_callback(callback cb);
+	/// Remove callback from process' list
 	bool remove_callback(callback cb, std::error_code& err) noexcept;
+
+	void ignore(type t);
+	bool ignore(type t, std::error_code& err) noexcept;
+	void restore_default(type t);
+	bool restore_default(type t, std::error_code& err) noexcept;
 
 	void send(dword_t process_group_id, type t);
 	bool send(dword_t process_group_id, type t, std::error_code& err) noexcept;

@@ -75,7 +75,10 @@ export namespace os
 			using __OS_NAMESPACE::ipc::signal::type;
 			using __OS_NAMESPACE::ipc::signal::interrupt;
 			using __OS_NAMESPACE::ipc::signal::terminate;
+
 			using __OS_NAMESPACE::ipc::signal::send;
+			using __OS_NAMESPACE::ipc::signal::ignore;
+			using __OS_NAMESPACE::ipc::signal::restore_default;
 		}
 		using __OS_NAMESPACE::ipc::pipe;
 		using __OS_NAMESPACE::ipc::create_pipe;

@@ -56,6 +56,12 @@ std::pair< winapi::ipc::pipe, winapi::ipc::pipe >
 	return {pipe{read}, pipe{write}};
 }
 
+void winapi::ipc::pipe::prevent_signal_emiting() noexcept
+{}
+bool winapi::ipc::pipe::prevent_signal_emiting(std::error_code& err) noexcept
+{
+	return true;
+}
 void winapi::ipc::pipe::set_traits(bool packet, bool nonblock)
 {
 	THROW_IF_ERR(set_traits, "failed to set pipe traits", packet, nonblock);

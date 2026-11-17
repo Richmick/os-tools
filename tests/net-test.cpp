@@ -60,7 +60,7 @@ BOOST_AUTO_TEST_CASE(ipv6_test)
 	os::net::socket connection = server.accept(err);
 	BOOST_TEST(!static_cast< bool >(err));
 	connection.write(test_msg, err);
-	BOOST_TEST(!static_cast<bool>(err));
+	BOOST_TEST(!static_cast< bool >(err));
 	connection.shutdown(false, true, err);
 	connection.close_handle();
 

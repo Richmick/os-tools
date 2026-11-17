@@ -1,12 +1,35 @@
 module;
 	#ifdef __linux__
 		#include <signal.h>
+		#include <os-tools/os_macro.hpp>
 	#endif
 module os.linapi;
 
 #ifdef __linux__
 import std;
 
+void linapi::ipc::signal::ignore(type t)
+{
+	THROW_IF_ERR(ignore, "failed to set ignore signal handler", t);
+}
+bool linapi::ipc::signal::ignore(type t, std::error_code& err) noexcept
+{
+	sigaction_t description{};
+	description.sa_handler = SIG_IGN;
+	process_error(linapi::calls::sigaction(t, &description, nullptr), err);
+	return static_cast< bool >(err);
+}
+void linapi::ipc::signal::restore_default(type t)
+{
+	THROW_IF_ERR(restore_default, "failed to set default signal handler", t);
+}
+bool linapi::ipc::signal::restore_default(type t, std::error_code& err) noexcept
+{
+	sigaction_t description{};
+	description.sa_handler = SIG_DFL;
+	process_error(linapi::calls::sigaction(t, &description, nullptr), err);
+	return static_cast< bool >(err);
+}
 void linapi::ipc::signal::register_callback(callback cb, type t)
 {
 	std::error_code err;

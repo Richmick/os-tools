@@ -100,6 +100,19 @@ BOOST_AUTO_TEST_CASE(named_rw_test)
 
 	BOOST_TEST(reader.join() == 0);
 }
+BOOST_AUTO_TEST_CASE(write_to_closed_test)
+{
+	constexpr const char msg[] = "allo";
+	auto [read, write] = os::ipc::create_pipe();
+	read.close_handle();
+
+	os::ipc::pipe::prevent_signal_emiting();
+
+	std::error_code err;
+	std::size_t was_written = write.write_once(msg, err);
+	BOOST_TEST(was_written == 0);
+	BOOST_TEST(static_cast< bool >(err));
+}
 int reader_packet_func(std::string pipename) noexcept
 {
 	std::error_code err;
@@ -108,8 +121,9 @@ int reader_packet_func(std::string pipename) noexcept
 	os::ipc::named_pipe read = os::ipc::open_client_pipe(params, "name", err);
 	BOOST_TEST((!read.nonblock(err) && !static_cast<bool>(err)));
 	BOOST_TEST(read.packet(err));
-	BOOST_TEST(!static_cast<bool>(err));
+	BOOST_TEST(!static_cast< bool >(err));
 	BOOST_TEST(read.read(err) == test_msg);
+	if (err == std::errc::broken_pipe) return 0;
 	return static_cast< bool >(err);
 }
 BOOST_AUTO_TEST_CASE(packet_test)
