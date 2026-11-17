@@ -41,6 +41,9 @@ export namespace os
 
 	using __OS_NAMESPACE::thread;
 	using __OS_NAMESPACE::process;
+
+	using __OS_NAMESPACE::file_mapping;
+	using __OS_NAMESPACE::mapped_memory;
 	namespace this_thread
 	{
 		using __OS_NAMESPACE::this_thread::native_handle;
@@ -88,6 +91,8 @@ export namespace os
 		using __OS_NAMESPACE::ipc::open_client_pipe;
 
 		using __OS_NAMESPACE::ipc::event;
+
+		using __OS_NAMESPACE::ipc::create_shared_memory;
 	}
 	namespace net
 	{

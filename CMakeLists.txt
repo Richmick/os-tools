@@ -5,7 +5,7 @@ include(cmake/import-std.cmake)
 
 enable_experimental_std()
 project("os-tools"
-		VERSION 0.0.9
+		VERSION 0.0.10
 		DESCRIPTION "Os tools library"
 		LANGUAGES CXX
 )
@@ -38,6 +38,7 @@ set(cxx_sources
 
 	"os-tools/winapi/aliases.cpp"
 	"os-tools/winapi/handle.cpp"
+	"os-tools/winapi/mapping.cpp"
 	"os-tools/winapi/exec/thread.cpp"
 	"os-tools/winapi/exec/process.cpp"
 	"os-tools/winapi/exec/process_ctors.cpp"
@@ -47,6 +48,7 @@ set(cxx_sources
 	"os-tools/winapi/ipc/pipe.cpp"
 	"os-tools/winapi/ipc/signal.cpp"
 	"os-tools/winapi/ipc/event.cpp"
+	"os-tools/winapi/ipc/shared_memory.cpp"
 	"os-tools/winapi/net/aliases.cpp"
 	"os-tools/winapi/net/socket.cpp"
 	"os-tools/winapi/numa/nodes.cpp"
@@ -76,6 +78,7 @@ set(cxx_modules
 	"os-tools/winapi.ixx"
 	"os-tools/winapi/aliases.ixx"
 	"os-tools/winapi/handle.ixx"
+	"os-tools/winapi/mapping.ixx"
 	"os-tools/winapi/exec/thread.ixx"
 	"os-tools/winapi/exec/process.ixx"
 	"os-tools/winapi/sync/semaphore.ixx"
@@ -84,6 +87,7 @@ set(cxx_modules
 	"os-tools/winapi/ipc/pipe.ixx"
 	"os-tools/winapi/ipc/signal.ixx"
 	"os-tools/winapi/ipc/event.ixx"
+	"os-tools/winapi/ipc/shared_memory.ixx"
 	"os-tools/winapi/net/aliases.ixx"
 	"os-tools/winapi/net/socket.ixx"
 	"os-tools/winapi/numa/nodes.ixx"
@@ -91,6 +95,7 @@ set(cxx_modules
 	"os-tools/linapi.ixx"
 	"os-tools/linapi/aliases.ixx"
 	"os-tools/linapi/handle.ixx"
+	"os-tools/linapi/mapping.ixx"
 	"os-tools/linapi/exec/thread.ixx"
 	"os-tools/linapi/exec/process.ixx"
 	"os-tools/linapi/ipc/pipe.ixx"

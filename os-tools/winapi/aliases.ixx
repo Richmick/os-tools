@@ -172,6 +172,8 @@ export namespace winapi
 		using ::ReadFileEx;
 		using ::WriteFile;
 		using ::WriteFileEx;
+		using ::MapViewOfFile;
+		using ::UnmapViewOfFile;
 
 		// Pipes
 		using ::CreatePipe;

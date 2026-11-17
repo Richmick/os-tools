@@ -6,9 +6,9 @@ import :aliases;
 import :handle;
 import :mapping;
 
-export namespace winapi
+export namespace winapi::ipc
 {
-	mapped_memory create_shared_memory(std::size_t len);
-	mapped_memory create_shared_memory(std::size_t len, std::error_code& err) noexcept;
+	mapped_memory create_shared_memory(filemode mode, std::size_t len);
+	mapped_memory create_shared_memory(filemode mode, std::size_t len, std::error_code& err) noexcept;
 }
 #endif
