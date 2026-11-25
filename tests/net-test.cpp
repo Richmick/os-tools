@@ -11,7 +11,7 @@ constexpr const char test_msg[] = "allo";
 int client_func(os::net::const_address_link link) noexcept
 {
 	std::error_code err;
-	os::net::socket client{os::net::type_of(link), os::net::protocol::tcp, err};
+	os::net::socket client{os::net::type_of(link), os::net::socket::type::stream, os::net::protocol::tcp, err};
 	BOOST_TEST(!!(client));
 	BOOST_TEST(client.connect(link, err));
 	std::string res = client.read(err);
@@ -21,7 +21,7 @@ int client_func(os::net::const_address_link link) noexcept
 
 BOOST_AUTO_TEST_CASE(ipv4_test)
 {
-	os::net::socket server{os::net::address_type::ipv4, os::net::protocol::tcp};
+	os::net::socket server{os::net::address_type::ipv4, os::net::socket::type::stream, os::net::protocol::tcp};
 	BOOST_TEST((server.handle_inheritance() == os::inheritmode::none));
 	server.enable_handle_inheritance();
 	BOOST_TEST((server.handle_inheritance() == os::inheritmode::all));
@@ -47,7 +47,7 @@ BOOST_AUTO_TEST_CASE(ipv4_test)
 }
 BOOST_AUTO_TEST_CASE(ipv6_test)
 {
-	os::net::socket server{os::net::address_type::ipv6, os::net::protocol::tcp};
+	os::net::socket server{os::net::address_type::ipv6, os::net::socket::type::stream, os::net::protocol::tcp};
 
 	auto addr = os::net::address_traits< os::net::address_ipv6 >::loopback;
 	server.bind(addr);

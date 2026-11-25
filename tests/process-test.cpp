@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(event_test,
 {
 	os::ipc::event event{os::inheritmode::all};
 	os::string event_h = os::to_string(event.native_handle());
-	os::process::initial_params params = {.inherit_handles = os::inheritmode::all, .create_group = true};
+	os::process::initial_params params = {.inherit_handles = os::inheritmode::all};
 	os::process proc{params, child_path, std::initializer_list{OS_STR("--event"), event_h.c_str()}};
 	event.wait();
 	BOOST_TEST(proc.join() == 0);
@@ -86,6 +86,44 @@ BOOST_AUTO_TEST_CASE(pipe_test,
 	downlink_write.write(msg2);
 	downlink_write.close_handle(); // send eol
 	BOOST_TEST(proc.join() == 0);
+}
+BOOST_AUTO_TEST_CASE(shared_memory_test,
+			* boost::unit_test::depends_on{"process_tests/startup_test"})
+{
+	struct mem_struct
+	{
+		std::uint32_t len = 0;
+		std::uint32_t arr_base;
+	};
+	os::filemode mode = static_cast< os::filemode >(os::filemode::read | os::filemode::write);
+	os::file_mapping map = os::ipc::create_shared_memory(mode, 4096, os::inheritmode::all);
+	os::mapped_memory mem = map.map(mode, 0, 4096);
+	mem_struct* typed = mem.as< mem_struct >();
+	os::ipc::event read_ready{os::inheritmode::all};
+	
+	os::process::initial_params params = {.inherit_handles = os::inheritmode::all};
+	
+	os::process proc{params, child_path, std::initializer_list< os::string >{
+					OS_STR("--shm-test"),
+					OS_STR("--event"),
+					os::to_string(read_ready.native_handle()),
+					OS_STR("--map"),
+					os::to_string(map.native_handle())
+				}};
+	constexpr std::uint32_t start_size = 10;
+	typed->len = start_size;
+	for (std::size_t i = 0; i < typed->len; i++)
+	{
+		(&typed->arr_base)[i] = 1 << i;
+	}
+	read_ready.signal();
+	BOOST_TEST(proc.join() == 0);
+
+	BOOST_TEST(typed->len == start_size - 1);
+	for (std::size_t i = 0; i < typed->len; i++)
+	{
+		BOOST_TEST((&typed->arr_base)[i] == (1 << (i + 1)));
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()

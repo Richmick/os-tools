@@ -15,11 +15,12 @@ winapi::mapped_memory winapi::file_mapping::map(filemode mode, std::uint64_t off
 winapi::mapped_memory winapi::file_mapping::map(filemode mode, std::uint64_t offset, std::size_t length, std::error_code& err) const noexcept
 {
 	dword_t flags = FILE_MAP_READ;
-	if (mode & filemode::write) flags = FILE_MAP_WRITE;
+	if (mode & filemode::write) flags |= FILE_MAP_WRITE;
 	if (mode & filemode::execute) flags |= FILE_MAP_EXECUTE;
 	dword_t high_offset = static_cast< dword_t >(offset >> 32);
 	dword_t low_offset = static_cast< dword_t >(offset);
 	mapped_memory result{winapi::calls::MapViewOfFile(native_.get(), flags, high_offset, low_offset, length), length};
+	process_error(result.data() != nullptr, err);
 	return result;
 }
 
@@ -61,7 +62,7 @@ winapi::mapped_memory::operator bool() const noexcept
 }
 void* winapi::mapped_memory::operator[](std::size_t offset) const noexcept
 {
-	return static_cast< char* >(storage_) + length_;
+	return static_cast< char* >(storage_) + offset;
 }
 std::pair< void*, std::size_t > winapi::mapped_memory::release() noexcept
 {

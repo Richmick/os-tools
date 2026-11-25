@@ -1,3 +1,7 @@
+module;
+	#ifdef __linux__
+		#include <fcntl.h>
+	#endif
 export module os.linapi:handle;
 
 import std;
@@ -13,10 +17,21 @@ export namespace linapi
 	std::basic_ostream< CharT, Traits >& operator<<(std::basic_ostream< CharT, Traits >& out,
 				const linapi::unique_handle& rhs);
 	bool is_blank(handle_t h) noexcept;
+
 	void set_inheritance(inheritmode inherit, handle_t h);
 	bool set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept;
 	inheritmode get_inheritance(handle_t h);
 	inheritmode get_inheritance(handle_t h, std::error_code& err) noexcept;
+
+	enum handle_mode
+	{
+		nonblock = O_NONBLOCK,
+		packet = O_DIRECT
+	};
+	void set_mode(handle_t h, int mask, int flags);
+	bool set_mode(handle_t h, int mask, int flags, std::error_code& err) noexcept;
+	int get_mode(handle_t h);
+	int get_mode(handle_t h, std::error_code& err) noexcept;
 }
 export namespace std
 {

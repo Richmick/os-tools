@@ -8,6 +8,7 @@ module;
 		#include <sys/wait.h>
 		#include <sys/eventfd.h>
 		#include <sys/resource.h>
+		#include <sys/mman.h>
 		#include <fcntl.h>
 		#include <os-tools/linapi/feature_test.hpp>
 	#endif
@@ -52,6 +53,9 @@ export namespace linapi
 	using thread_handle_t = pthread_t;
 	using process_handle_t = pid_t;
 	using thread_attributes_t = pthread_attr_t;
+	using ::pthread_mutex_t;
+	using ::pthread_rwlock_t;
+	using ::pthread_cond_t;
 	constexpr inline handle_t empty_handle = -1;
 
 	enum class io
@@ -84,6 +88,10 @@ export namespace linapi
 		using ::dup3;
 		using ::fcntl;
 		using ::getrlimit;
+		using ::mmap;
+		using ::munmap;
+		using ::memfd_create;
+		using ::ftruncate;
 
 		// Process
 		using ::getpid;
@@ -125,6 +133,29 @@ export namespace linapi
 		using ::pthread_attr_setschedpolicy;
 		using ::pthread_attr_setinheritsched;
 
+		// Mutex
+		using ::pthread_mutex_init;
+		using ::pthread_mutex_destroy;
+		using ::pthread_mutex_lock;
+		using ::pthread_mutex_trylock;
+		using ::pthread_mutex_unlock;
+
+		// Shared mutex
+		using ::pthread_rwlock_init;
+		using ::pthread_rwlock_destroy;
+		using ::pthread_rwlock_wrlock;
+		using ::pthread_rwlock_rdlock;
+		using ::pthread_rwlock_trywrlock;
+		using ::pthread_rwlock_tryrdlock;
+		using ::pthread_rwlock_unlock;
+
+		// Condition variable
+		using ::pthread_cond_init;
+		using ::pthread_cond_destroy;
+		using ::pthread_cond_wait;
+		using ::pthread_cond_broadcast;
+		using ::pthread_cond_signal;
+
 		// Pipes
 		using ::pipe;
 		using ::pipe2;
@@ -136,6 +167,12 @@ export namespace linapi
 		using ::sigaction;
 		using ::kill;
 		using ::killpg;
+
+		// User
+		using ::getuid;
+		using ::geteuid;
+		using ::getgid;
+		using ::getegid;
 	}
 
 	std::error_code last_error_code();
@@ -143,7 +180,7 @@ export namespace linapi
 	std::system_error last_error(const std::string& msg);
 	void throw_on_error(std::error_code err, const char* msg);
 	void throw_on_error(std::error_code err, const std::string& msg);
-	void process_error(bool success, std::error_code& err) noexcept;
+	bool process_error(bool success, std::error_code& err) noexcept;
 	handle_t process_error(handle_t res, std::error_code& err) noexcept;
 
 	enum class priority

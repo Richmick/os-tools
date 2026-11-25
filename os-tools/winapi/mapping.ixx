@@ -17,6 +17,8 @@ export namespace winapi
 class winapi::file_mapping: public handle_container_base
 {
 public:
+	using handle_container_base::handle_container_base;
+
 	mapped_memory map(filemode mode, std::uint64_t offset, std::size_t length) const;
 	mapped_memory map(filemode mode, std::uint64_t offset, std::size_t length, std::error_code& err) const noexcept;
 };

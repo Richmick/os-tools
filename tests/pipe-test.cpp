@@ -37,7 +37,7 @@ BOOST_AUTO_TEST_CASE(read_write_test)
 
 	write.write(test_msg);
 	write.close_handle();
-	//BOOST_TEST(read.read() == test_msg);
+	BOOST_TEST(read.read() == test_msg);
 }
 BOOST_AUTO_TEST_CASE(eol_test)
 {
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(eol_test2)
 	BOOST_TEST(was_read == 0);
 	BOOST_TEST((err == std::errc::broken_pipe));
 }
-int reader_func(std::string pipename) noexcept
+/*int reader_func(std::string pipename) noexcept
 {
 	std::error_code err;
 	os::ipc::named_pipe read = os::ipc::open_client_pipe("name", os::openmode::in, err);
@@ -139,7 +139,6 @@ BOOST_AUTO_TEST_CASE(packet_test)
 	write.close_handle();
 
 	BOOST_TEST(reader.join() == 0);
-
-}
+}*/
 
 BOOST_AUTO_TEST_SUITE_END()

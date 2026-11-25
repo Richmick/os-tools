@@ -38,10 +38,11 @@ void linapi::throw_on_error(std::error_code err, const std::string& msg)
 {
 	if (err) throw std::system_error(err, msg);
 }
-void linapi::process_error(bool success, std::error_code& err) noexcept
+bool linapi::process_error(bool success, std::error_code& err) noexcept
 {
 	if (success) err.clear();
 	else err = last_error_code();
+	return success;
 }
 linapi::handle_t linapi::process_error(handle_t res, std::error_code& err) noexcept
 {

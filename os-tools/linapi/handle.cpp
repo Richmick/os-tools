@@ -19,7 +19,12 @@ void linapi::set_inheritance(inheritmode inherit, handle_t h)
 bool linapi::set_inheritance(inheritmode inherit, handle_t h, std::error_code& err) noexcept
 {
 	constexpr int flag = FD_CLOEXEC;
-	process_error(linapi::calls::fcntl(h, F_SETFD, (inherit == inheritmode::all ? 0 : flag)) != -1, err);
+	int prev_flags = linapi::calls::fcntl(h, F_GETFD);
+	process_error(prev_flags != -1, err);
+	if (!err)
+	{
+		process_error(linapi::calls::fcntl(h, F_SETFD, (prev_flags & ~flag) | (inherit == inheritmode::all ? 0 : flag)) != -1, err);
+	}
 	return !static_cast< bool >(err);
 }
 linapi::inheritmode linapi::get_inheritance(handle_t h)
@@ -31,7 +36,31 @@ linapi::inheritmode linapi::get_inheritance(handle_t h, std::error_code& err) no
 	constexpr int flag = FD_CLOEXEC;
 	int result = linapi::calls::fcntl(h, F_GETFD);
 	process_error(result != -1, err);
-	return static_cast< inheritmode >(static_cast< bool >(result & flag));
+	return static_cast< inheritmode >(!static_cast< bool >(result & flag));
+}
+
+void linapi::set_mode(handle_t h, int mask, int flags)
+{
+	THROW_IF_ERR(set_mode, "failed to set handle flags", h, mask, flags);
+}
+bool linapi::set_mode(handle_t h, int mask, int flags, std::error_code& err) noexcept
+{
+	int prev_flags = get_mode(h, err);
+	if (!err)
+	{
+		process_error(linapi::calls::fcntl(h, F_SETFL, (prev_flags & ~mask) | flags) != -1, err);
+	}
+	return !static_cast< bool >(err);
+}
+int linapi::get_mode(handle_t h)
+{
+	THROW_IF_ERR_PROXY(get_mode, "failed to get handle flags", h);
+}
+int linapi::get_mode(handle_t h, std::error_code& err) noexcept
+{
+	int result = linapi::calls::fcntl(h, F_GETFL);
+	process_error(result != -1, err);
+	return result;
 }
 
 linapi::unique_handle::unique_handle(unique_handle&& rhs) noexcept:

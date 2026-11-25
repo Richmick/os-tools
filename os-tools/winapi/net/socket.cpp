@@ -15,20 +15,20 @@ winapi::net::socket::socket(socket&& rhs) noexcept:
 winapi::net::socket::socket(native_handle_type h) noexcept:
 	native_(h)
 {}
-winapi::net::socket::socket(address_type addr, protocol proto)
+winapi::net::socket::socket(address_type addr, type t, protocol proto)
 {
-	THROW_IF_ERR_CTOR(socket, "failed to create socket", addr, proto);
+	THROW_IF_ERR_CTOR(socket, "failed to create socket", addr, t, proto);
 }
-winapi::net::socket::socket(address_type addr, protocol proto, std::error_code& err) noexcept:
-	socket(addr, proto, inheritmode::none, err)
+winapi::net::socket::socket(address_type addr, type t, protocol proto, std::error_code& err) noexcept:
+	socket(addr, t, proto, inheritmode::none, err)
 {}
-winapi::net::socket::socket(address_type addr, protocol proto, inheritmode inherit)
+winapi::net::socket::socket(address_type addr, type t, protocol proto, inheritmode inherit)
 {
-	THROW_IF_ERR_CTOR(socket, "failed to create socket", addr, proto, inherit);
+	THROW_IF_ERR_CTOR(socket, "failed to create socket", addr, t, proto, inherit);
 }
-winapi::net::socket::socket(address_type addr, protocol proto, inheritmode inherit, std::error_code& err) noexcept:
-	native_(winapi::calls::WSASocketA(static_cast< int >(addr),
-				determine_socket_type(proto), static_cast< int >(proto), nullptr, 0, WSA_FLAG_NO_HANDLE_INHERIT))
+winapi::net::socket::socket(address_type addr, type t, protocol proto, inheritmode inherit, std::error_code& err) noexcept:
+	native_(winapi::calls::WSASocketA(static_cast< int >(addr), static_cast< int >(t),
+				static_cast< int >(proto), nullptr, 0, WSA_FLAG_NO_HANDLE_INHERIT))
 {
 	net::process_error(operator bool(), err);
 }
@@ -90,7 +90,7 @@ bool winapi::net::socket::shutdown(bool close_read, bool close_write, std::error
 
 winapi::net::address_any winapi::net::socket::address() const
 {
-	THROW_IF_ERR_PROXY0(address, "failed to pbtain socket address (name)");
+	THROW_IF_ERR_PROXY0(address, "failed to obtain socket address (name)");
 }
 winapi::net::address_any winapi::net::socket::address(std::error_code& err) const noexcept
 {
@@ -101,7 +101,7 @@ winapi::net::address_any winapi::net::socket::address(std::error_code& err) cons
 }
 winapi::net::address_any winapi::net::socket::peer_address() const
 {
-	THROW_IF_ERR_PROXY0(address, "failed to pbtain socket peer address (name)");
+	THROW_IF_ERR_PROXY0(address, "failed to obtain socket peer address (name)");
 }
 winapi::net::address_any winapi::net::socket::peer_address(std::error_code& err) const noexcept
 {
@@ -214,7 +214,7 @@ std::size_t winapi::net::socket::write(std::span< const std::byte > data, std::e
 	std::size_t offset = 0;
 	while (offset < data.size())
 	{
-		offset += write_once(data.subspan(offset));
+		offset += write_once(data.subspan(offset), err);
 		if (err == std::errc::broken_pipe) return offset;
 	}
 	return offset;

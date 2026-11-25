@@ -27,16 +27,23 @@ int main(int argc, const char*const* argv)
 	parser.add_flag("env-test", 'e');
 	parser.add_flag("sig-test", 's');
 	parser.add_flag("interactive-test", 'i');
+	parser.add_flag("shm-test", 'i');
 	parser.add_key("event");
 	parser.add_key("mutex", 'm');
+	parser.add_key("map");
 	os::flags flags;
 	os::ipc::event init_event{os::make_empty};
+	os::file_mapping map;
 	try
 	{
 		flags = parser.parse(argc, argv);
 		if (flags.has("event"))
 		{
 			init_event = os::ipc::event{os::to_handle(flags["event"])};
+		}
+		if (flags.has("map"))
+		{
+			map = os::file_mapping{os::to_handle(flags["map"])};
 		}
 	}
 	catch (const std::invalid_argument& e)
@@ -75,6 +82,27 @@ int main(int argc, const char*const* argv)
 		{
 			std::this_thread::sleep_for(std::chrono::seconds::max());
 		}
+		return 0;
+	}
+	if (flags.has("shm-test"))
+	{
+		struct mem_struct
+		{
+			std::uint32_t len = 0;
+			std::uint32_t arr_base;
+		};
+		os::filemode mode = static_cast< os::filemode >(os::filemode::read | os::filemode::write);
+		os::mapped_memory mem = map.map(mode, 0, 4096);
+		mem_struct* typed = mem.as< mem_struct >();
+		init_event.wait();
+
+		if (typed->len == 0) return 3;
+		for (std::size_t i = 0; i < typed->len; i++)
+		{
+			if ((&typed->arr_base)[i] != (1 << i)) return 3;
+			(&typed->arr_base)[i] <<= 1;
+		}
+		typed->len--;
 		return 0;
 	}
 	if (init_event) init_event.signal();

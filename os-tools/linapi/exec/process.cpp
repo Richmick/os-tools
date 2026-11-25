@@ -2,6 +2,7 @@ module;
 	#ifdef __linux__
 		#include <cassert>
 		#include <sys/wait.h>
+		#include <os-tools/os_macro.hpp>
 	#endif
 module os.linapi;
 
@@ -58,6 +59,15 @@ void linapi::this_process::signal(ipc::signal::type type)
 	{
 		throw linapi::last_error("failed to signal to process");
 	}
+}
+linapi::user::id linapi::this_process::get_user_id() noexcept
+{
+	return linapi::calls::getuid();
+}
+linapi::user::id linapi::this_process::get_user_id(std::error_code& err) noexcept
+{
+	err.clear();
+	return linapi::calls::getuid();
 }
 
 linapi::path linapi::this_process::executable()

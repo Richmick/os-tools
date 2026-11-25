@@ -1,3 +1,7 @@
+module;
+	#ifdef __linux__
+		#include <sys/mman.h>
+	#endif
 export module os.linapi:mapping;
 
 #ifdef __linux__
@@ -7,13 +11,20 @@ import :handle;
 
 export namespace linapi
 {
+	enum filemode
+	{
+		read = PROT_READ, write = PROT_WRITE, execute = PROT_EXEC
+	};
 	class file_mapping;
 	class mapped_memory;
 }
 class linapi::file_mapping: public handle_container_base
 {
 public:
-	mapped_memory map(int mode, std::size_t offset, std::size_t length, std::error_code& err) const noexcept;
+	using handle_container_base::handle_container_base;
+
+	mapped_memory map(filemode mode, std::uint64_t offset, std::size_t length) const;
+	mapped_memory map(filemode mode, std::uint64_t offset, std::size_t length, std::error_code& err) const noexcept;
 };
 class linapi::mapped_memory
 {
@@ -27,32 +38,34 @@ public:
 	mapped_memory& operator=(const mapped_memory&) = delete;
 
 	template< class T >
-	T* as(std::size_t offset = 0) noexcept;
+	T* as(std::size_t offset = 0) const noexcept;
 	template< class T >
-	T* at(std::size_t offset);
-	inline void* operator[](std::size_t offset) noexcept;
-	inline bool inside(void* ptr) noexcept;
+	T* at(std::size_t offset) const;
+	void* operator[](std::size_t offset) const noexcept;
+	bool inside(void* ptr) const noexcept;
 
-	void unmap() noexcept;
+	void* data() const noexcept;
+	std::size_t size() const noexcept;
+	operator bool() const noexcept;
+
+	void unmap();
+	bool unmap(std::error_code& err) noexcept;
+	std::pair< void*, std::size_t > release() noexcept;
 
 private:
 	void* storage_ = nullptr;
 	std::size_t length_ = 0;
 };
 template< class T >
-T* linapi::mapped_memory::as(std::size_t offset) noexcept
+T* linapi::mapped_memory::as(std::size_t offset) const noexcept
 {
 	return static_cast< T* >(operator[](offset));
 }
 template< class T >
-T* linapi::mapped_memory::at(std::size_t offset)
+T* linapi::mapped_memory::at(std::size_t offset) const
 {
 	if (offset + sizeof(T) >= length_)
 		throw std::out_of_range("at offset out of range");
 	return operator[](offset);
-}
-inline void* linapi::mapped_memory::operator[](std::size_t offset) noexcept
-{
-	return storage_ + length_;
 }
 #endif

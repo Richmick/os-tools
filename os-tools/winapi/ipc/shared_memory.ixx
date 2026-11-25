@@ -8,7 +8,9 @@ import :mapping;
 
 export namespace winapi::ipc
 {
-	mapped_memory create_shared_memory(filemode mode, std::size_t len);
-	mapped_memory create_shared_memory(filemode mode, std::size_t len, std::error_code& err) noexcept;
+	file_mapping create_shared_memory(filemode mode, std::size_t len);
+	file_mapping create_shared_memory(filemode mode, std::size_t len, std::error_code& err) noexcept;
+	file_mapping create_shared_memory(filemode mode, std::size_t len, inheritmode inherit);
+	file_mapping create_shared_memory(filemode mode, std::size_t len, inheritmode inherit, std::error_code& err) noexcept;
 }
 #endif

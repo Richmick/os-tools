@@ -30,6 +30,7 @@ export namespace os
 	using __OS_NAMESPACE::make_empty_t;
 	using __OS_NAMESPACE::make_empty;
 	using __OS_NAMESPACE::openmode;
+	using __OS_NAMESPACE::filemode;
 	using __OS_NAMESPACE::inheritmode;
 	using __OS_NAMESPACE::io;
 
@@ -51,13 +52,14 @@ export namespace os
 		using __OS_NAMESPACE::this_thread::get_process_id;
 		using __OS_NAMESPACE::this_thread::get_priority;
 		using __OS_NAMESPACE::this_thread::set_priority;
-		using __OS_NAMESPACE::this_thread::get_ideal_processor;
-		using __OS_NAMESPACE::this_thread::set_ideal_processor;
+		//using __OS_NAMESPACE::this_thread::get_ideal_processor;
+		//using __OS_NAMESPACE::this_thread::set_ideal_processor;
 	}
 	namespace this_process
 	{
 		using __OS_NAMESPACE::this_process::native_handle;
 		using __OS_NAMESPACE::this_process::get_id;
+		using __OS_NAMESPACE::this_process::get_user_id;
 		using __OS_NAMESPACE::this_process::executable;
 		using __OS_NAMESPACE::this_process::get_env;
 		using __OS_NAMESPACE::this_process::set_env;
@@ -112,14 +114,13 @@ export namespace os
 	}
 	namespace numa
 	{
-		using __OS_NAMESPACE::numa::node;
+		/*using __OS_NAMESPACE::numa::node;
 		using __OS_NAMESPACE::numa::processor;
 		using __OS_NAMESPACE::numa::cpu_set;
-		using __OS_NAMESPACE::numa::cpu_set_info;
+		using __OS_NAMESPACE::numa::cpu_set_info;*/
 	}
 
-	/*using __OS_NAMESPACE::counting_semaphore;
 	using __OS_NAMESPACE::mutex;
 	using __OS_NAMESPACE::shared_mutex;
-	using __OS_NAMESPACE::condition_variable;*/
+	using __OS_NAMESPACE::condition_variable;
 }

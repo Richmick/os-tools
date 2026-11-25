@@ -52,16 +52,24 @@ set(cxx_sources
 	"os-tools/winapi/net/aliases.cpp"
 	"os-tools/winapi/net/socket.cpp"
 	"os-tools/winapi/numa/nodes.cpp"
+	"os-tools/winapi/user/aliases.cpp"
 
 	"os-tools/linapi/aliases.cpp"
 	"os-tools/linapi/handle.cpp"
+	"os-tools/linapi/mapping.cpp"
 	"os-tools/linapi/exec/thread.cpp"
 	"os-tools/linapi/exec/process.cpp"
 	"os-tools/linapi/exec/process_ctors.cpp"
 	"os-tools/linapi/exec/process_subcalls.cpp"
+	"os-tools/linapi/sync/mutex.cpp"
+	"os-tools/linapi/sync/condition_variable.cpp"
 	"os-tools/linapi/ipc/pipe.cpp"
 	"os-tools/linapi/ipc/signal.cpp"
 	"os-tools/linapi/ipc/event.cpp"
+	"os-tools/linapi/ipc/shared_memory.cpp"
+	"os-tools/linapi/net/aliases.cpp"
+	"os-tools/linapi/net/socket.cpp"
+	"os-tools/linapi/user/user.cpp"
 )
 set(cxx_private_headers
 	"os-tools/winapi/deps.hpp"
@@ -73,7 +81,6 @@ set(cxx_modules
 	"os-tools/argv_parser.ixx"
 	"os-tools/utils.ixx"
 	"os-tools/os.ixx"
-	"os-tools/utils.ixx"
 
 	"os-tools/winapi.ixx"
 	"os-tools/winapi/aliases.ixx"
@@ -91,6 +98,7 @@ set(cxx_modules
 	"os-tools/winapi/net/aliases.ixx"
 	"os-tools/winapi/net/socket.ixx"
 	"os-tools/winapi/numa/nodes.ixx"
+	"os-tools/winapi/user/aliases.ixx"
 
 	"os-tools/linapi.ixx"
 	"os-tools/linapi/aliases.ixx"
@@ -98,9 +106,15 @@ set(cxx_modules
 	"os-tools/linapi/mapping.ixx"
 	"os-tools/linapi/exec/thread.ixx"
 	"os-tools/linapi/exec/process.ixx"
+	"os-tools/linapi/sync/mutex.ixx"
+	"os-tools/linapi/sync/condition_variable.ixx"
 	"os-tools/linapi/ipc/pipe.ixx"
 	"os-tools/linapi/ipc/signal.ixx"
 	"os-tools/linapi/ipc/event.ixx"
+	"os-tools/linapi/ipc/shared_memory.ixx"
+	"os-tools/linapi/net/aliases.ixx"
+	"os-tools/linapi/net/socket.ixx"
+	"os-tools/linapi/user/user.ixx"
 )
 
 target_sources(${PROJECT_NAME} PRIVATE ${cxx_sources})

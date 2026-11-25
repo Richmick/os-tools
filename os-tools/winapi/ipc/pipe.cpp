@@ -126,6 +126,11 @@ std::string winapi::ipc::pipe::read(std::error_code& err)
 						std::span span{str + pre, sz - pre};
 						return pre + read(std::as_writable_bytes(span), err);
 					});
+		if (err == std::errc::broken_pipe)
+		{
+			if (!res.empty()) err.clear();
+			return res;
+		}
 		if (!err) return res;
 		break;
 	}
@@ -169,7 +174,7 @@ std::size_t winapi::ipc::pipe::write(std::span< const std::byte > data, std::err
 	std::size_t offset = 0;
 	while (offset < data.size())
 	{
-		offset += write_once(data.subspan(offset));
+		offset += write_once(data.subspan(offset), err);
 		if (err == std::errc::broken_pipe) return offset;
 	}
 	return offset;

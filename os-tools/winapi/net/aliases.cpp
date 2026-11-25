@@ -47,7 +47,6 @@ winapi::net::lib_anchor::~lib_anchor()
 
 winapi::net::address_any::operator winapi::net::address_link() & noexcept
 {
-	sockaddr_in6 k;
 	return {reinterpret_cast< socket_address_t* >(&native), sizeof(native_type)};
 }
 winapi::net::address_any::operator winapi::net::const_address_link() const& noexcept

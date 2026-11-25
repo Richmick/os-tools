@@ -14,16 +14,22 @@ export namespace winapi::net
 class winapi::net::socket
 {
 public:
+	enum class type
+	{
+		stream = SOCK_STREAM,
+		datagram = SOCK_DGRAM,
+		raw = SOCK_RAW
+	};
 	using native_handle_type = socket_t;
 	static constexpr inline int max_connections = SOMAXCONN;
 
 	socket() noexcept = default;
 	socket(native_handle_type h) noexcept;
 	socket(socket&& rhs) noexcept;
-	socket(net::address_type addr, protocol proto);
-	socket(net::address_type addr, protocol proto, std::error_code& err) noexcept;
-	socket(net::address_type addr, protocol proto, inheritmode inherit);
-	socket(net::address_type addr, protocol proto, inheritmode inherit, std::error_code& err) noexcept;
+	socket(net::address_type addr, type t, protocol proto);
+	socket(net::address_type addr, type t, protocol proto, std::error_code& err) noexcept;
+	socket(net::address_type addr, type t, protocol proto, inheritmode inherit);
+	socket(net::address_type addr, type t, protocol proto, inheritmode inherit, std::error_code& err) noexcept;
 	socket& operator=(socket&& rhs) noexcept;
 
 	/// Bind address
@@ -77,20 +83,5 @@ public:
 
 private:
 	native_handle_type native_ = empty_socket;
-
-	static constexpr int determine_socket_type(protocol proto) noexcept;
 };
-
-constexpr int winapi::net::socket::determine_socket_type(protocol proto) noexcept
-{
-	switch (proto)
-	{
-	case protocol::tcp:
-		return SOCK_STREAM;
-	case protocol::udp:
-		return SOCK_DGRAM;
-	default:
-		return SOCK_RAW;
-	}
-}
 #endif

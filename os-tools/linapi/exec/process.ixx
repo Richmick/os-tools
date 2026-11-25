@@ -10,6 +10,7 @@ export module os.linapi:process;
 import std;
 import :aliases;
 import :signal;
+import :user;
 
 export namespace linapi
 {
@@ -132,6 +133,9 @@ export namespace linapi
 		void set_priority(process::priority p);
 		void signal(ipc::signal::type type = ipc::signal::interrupt);
 
+		user::id get_user_id() noexcept;
+		user::id get_user_id(std::error_code& err) noexcept;
+
 		[[noreturn]] void _exit(int code);
 
 		handle_t stdin() noexcept;
@@ -144,7 +148,7 @@ export namespace linapi
 		handle_t std_handle(io type, std::error_code& err) noexcept;
 
 		template< class T = handle_t >
-		static void closefrom(T start_from = 3);
+		void closefrom(T start_from = 3);
 	}
 }
 namespace std
